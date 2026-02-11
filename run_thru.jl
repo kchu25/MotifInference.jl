@@ -4,7 +4,7 @@ function obtain_trained_model_and_splited_datasets(data, trc)
     m, train_stats, dl_train, dl_test, split_indices = 
             train_and_evaluate_model(data, trc.model_creator, trc.save_path, trc.seed; 
             max_epochs=trc.max_training_epochs, patience=trc.patience,);
-    return m, train_stats, dl_train, dl_test
+    return m, train_stats, dl_train, dl_test, split_indices
 end
 
 function obtain_processor(m, dl_train, dl_test, trc; predict_position=1)
