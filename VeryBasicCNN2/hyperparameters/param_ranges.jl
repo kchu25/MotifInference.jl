@@ -86,6 +86,7 @@ nucleotide_ranges_fixed_pool_stride(; kwargs...) = HyperParamRanges(;
     pfm_length_range = 5:2:7,
     num_base_filters_range = 16:4:32,
     conv_filter_range = 48:4:64,
+    
     conv_filter_height_range = 2:4,
     pool_size_range = 2:2, # overrides by num_no_pool_layers in generation
     stride_range = 2:2, # overrides by num_no_pool_layers in generation
@@ -97,11 +98,11 @@ nucleotide_ranges_fixed_pool_stride(; kwargs...) = HyperParamRanges(;
 nucleotide_ranges_fixed_pool_stride_multioutputs(; kwargs...) = HyperParamRanges(;
     num_img_layers_range = 3:4,
     pfm_length_range = 5:2:7,
-    num_base_filters_range = 256:8:412,
-    conv_filter_range = 64:8:128,
+    num_base_filters_range = 64:8:96,
+    conv_filter_range = 48:4:64,
     conv_filter_height_range = 2:3,
-    pool_size_range = 1:2, # overrides by num_no_pool_layers in generation
-    stride_range = 1:2, # overrides by num_no_pool_layers in generation
+    pool_size_range = 2:2, # overrides by num_no_pool_layers in generation
+    stride_range = 2:2, # overrides by num_no_pool_layers in generation
     num_no_pool_layers = 0,
     infer_base_layer_code = false,
     kwargs...
