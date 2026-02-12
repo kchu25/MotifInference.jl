@@ -1,6 +1,6 @@
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 # Main SeqCNN Model
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 
 """
     SeqCNN
@@ -168,9 +168,9 @@ Check if model is in training mode.
 """
 is_training(m::SeqCNN) = m.training[]
 
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 # Model Parameter Counting
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 
 """
     count_parameters(model::SeqCNN)
@@ -310,9 +310,9 @@ function print_model_summary(model::SeqCNN)
     println("="^60)
 end
 
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 # Model Properties (via getproperty)
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 
 """
 Custom property access for convenient model introspection and utilities.
@@ -358,9 +358,9 @@ function predict_up_to_final_nonlinearity(m, code; predict_position=nothing)
         predict_position=predict_position)
 end
 
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 # Model Construction Helpers
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 
 """
     create_model(input_dims, output_dim, batch_size; rng=Random.GLOBAL_RNG, use_cuda=true, ranges=DEFAULT_RANGES)
@@ -412,54 +412,158 @@ function create_model(input_dims, output_dim, batch_size::Int;
                   rng=rng)
 end
 
-# Convenience constructors for specific domains
-create_model_nucleotides(input_dims, output_dim, batch_size; kwargs...) = 
-    create_model(input_dims, output_dim, batch_size; ranges=nucleotide_ranges(), kwargs...)
+# ────────────────────────────────────────────────────────────────────────────
+# Domain / Variant Tag Types for Multiple Dispatch
+# ────────────────────────────────────────────────────────────────────────────
 
-create_model_nucleotides_simple(input_dims, output_dim, batch_size; kwargs...) = 
-    create_model(input_dims, output_dim, batch_size; ranges=nucleotide_ranges_simple(), kwargs...)
+"""
+Lightweight tag types used with `create_model` for domain-specific construction.
+Combine them to select architecture variants:
 
-create_model_nucleotides_fixed_pool_stride(input_dims, output_dim, batch_size; kwargs...) = 
-    create_model(input_dims, output_dim, batch_size; 
-                ranges=nucleotide_ranges_fixed_pool_stride(), kwargs...)
+```julia
+create_model(Nucleotides(), input_dims, output_dim, batch_size)
+create_model(Nucleotides(), FixedPoolStride(), input_dims, output_dim, batch_size)
+create_model(AminoAcids(), FixedPoolStride(), Bottleneck(), input_dims, output_dim, bs)
+```
+"""
+struct Nucleotides    end
+struct AminoAcids     end
+struct Simple         end
+struct FixedPoolStride end
+struct Multioutputs   end
+struct UseTanh        end
+struct UseSigmoid     end
+struct Bottleneck     end
 
-create_model_aminoacids(input_dims, output_dim, batch_size; kwargs...) = 
-    create_model(input_dims, output_dim, batch_size; ranges=amino_acid_ranges(), kwargs...)
+# ---- model_ranges: map tag combos → HyperParamRanges ---
 
-create_model_aminoacids_fixed_pool_stride(input_dims, output_dim, batch_size; kwargs...) = 
-    create_model(input_dims, output_dim, batch_size; 
-                ranges=amino_acid_ranges_fixed_pool_stride(), kwargs...)
+# Base domains
+model_ranges(::Nucleotides)                                  = nucleotide_ranges()
+model_ranges(::AminoAcids)                                   = amino_acid_ranges()
 
-create_model_aminoacids_fixed_pool_stride_w_bottleneck(input_dims, output_dim, batch_size; kwargs...) = 
-    create_model(input_dims, output_dim, batch_size; 
-                ranges=amino_acid_ranges_fixed_pool_stride(), 
-                bottleneck=true,
-                kwargs...)
+# Variants
+model_ranges(::Nucleotides, ::Simple)                        = nucleotide_ranges_simple()
+model_ranges(::Nucleotides, ::FixedPoolStride)               = nucleotide_ranges_fixed_pool_stride()
+model_ranges(::Nucleotides, ::FixedPoolStride, ::Multioutputs) = nucleotide_ranges_fixed_pool_stride_multioutputs()
+model_ranges(::AminoAcids,  ::FixedPoolStride)               = amino_acid_ranges_fixed_pool_stride()
 
 # Tanh variants
-create_model_nucleotides_tanh(input_dims, output_dim, batch_size; kwargs...) = 
-    create_model(input_dims, output_dim, batch_size; ranges=nucleotide_ranges_tanh(), kwargs...)
+model_ranges(::Nucleotides, ::UseTanh)                       = nucleotide_ranges_tanh()
+model_ranges(::Nucleotides, ::Simple, ::UseTanh)             = nucleotide_ranges_simple_tanh()
+model_ranges(::Nucleotides, ::FixedPoolStride, ::UseTanh)    = nucleotide_ranges_fixed_pool_stride_tanh()
+model_ranges(::Nucleotides, ::FixedPoolStride, ::Multioutputs, ::UseTanh) = nucleotide_ranges_fixed_pool_stride_multioutputs_tanh()
+model_ranges(::AminoAcids,  ::UseTanh)                       = amino_acid_ranges_tanh()
+model_ranges(::AminoAcids,  ::FixedPoolStride, ::UseTanh)    = amino_acid_ranges_fixed_pool_stride_tanh()
 
-create_model_nucleotides_simple_tanh(input_dims, output_dim, batch_size; kwargs...) = 
-    create_model(input_dims, output_dim, batch_size; ranges=nucleotide_ranges_simple_tanh(), kwargs...)
+# Sigmoid variants
+model_ranges(::Nucleotides, ::UseSigmoid)                       = nucleotide_ranges_sigmoid()
+model_ranges(::Nucleotides, ::Simple, ::UseSigmoid)             = nucleotide_ranges_simple_sigmoid()
+model_ranges(::Nucleotides, ::FixedPoolStride, ::UseSigmoid)    = nucleotide_ranges_fixed_pool_stride_sigmoid()
+model_ranges(::Nucleotides, ::FixedPoolStride, ::Multioutputs, ::UseSigmoid) = nucleotide_ranges_fixed_pool_stride_multioutputs_sigmoid()
+model_ranges(::AminoAcids,  ::UseSigmoid)                       = amino_acid_ranges_sigmoid()
+model_ranges(::AminoAcids,  ::FixedPoolStride, ::UseSigmoid)    = amino_acid_ranges_fixed_pool_stride_sigmoid()
 
-create_model_nucleotides_fixed_pool_stride_tanh(input_dims, output_dim, batch_size; kwargs...) = 
-    create_model(input_dims, output_dim, batch_size; 
-                ranges=nucleotide_ranges_fixed_pool_stride_tanh(), kwargs...)
+# ---- Dispatched create_model with tags ---
 
-create_model_nucleotides_fixed_pool_stride_multioutputs(
-    input_dims, output_dim, batch_size; kwargs...) = 
-        create_model(input_dims, output_dim, batch_size; 
-            ranges=nucleotide_ranges_fixed_pool_stride_multioutputs(), kwargs...)
+"""
+    create_model(tag, input_dims, output_dim, batch_size; kwargs...)
+    create_model(tag1, tag2, input_dims, output_dim, batch_size; kwargs...)
+    create_model(tag1, tag2, tag3, input_dims, output_dim, batch_size; kwargs...)
 
-create_model_nucleotides_fixed_pool_stride_multioutputs_tanh(
-    input_dims, output_dim, batch_size; kwargs...) = 
-        create_model(input_dims, output_dim, batch_size; 
-            ranges=nucleotide_ranges_fixed_pool_stride_multioutputs_tanh(), kwargs...)
+Create a `SeqCNN` by dispatching on domain/variant tag types.
 
-create_model_aminoacids_tanh(input_dims, output_dim, batch_size; kwargs...) = 
-    create_model(input_dims, output_dim, batch_size; ranges=amino_acid_ranges_tanh(), kwargs...)
+# Examples
+```julia
+create_model(Nucleotides(), (4, 41), 244, 128)
+create_model(AminoAcids(), FixedPoolStride(), (20, 100), 1, 64)
+create_model(AminoAcids(), FixedPoolStride(), Bottleneck(), (20, 100), 1, 64)
+```
+"""
+# Helper to extract bottleneck flag and dispatch model_ranges
+function _create_model_with_tags(tags::Tuple, input_dims, output_dim, batch_size::Int; kwargs...)
+    use_bottleneck = any(t -> t isa Bottleneck, tags)
+    range_tags     = filter(t -> !(t isa Bottleneck), tags)
+    ranges         = model_ranges(range_tags...)
+    return create_model(input_dims, output_dim, batch_size;
+                        ranges=ranges, bottleneck=use_bottleneck, kwargs...)
+end
 
-create_model_aminoacids_fixed_pool_stride_tanh(input_dims, output_dim, batch_size; kwargs...) = 
-    create_model(input_dims, output_dim, batch_size; 
-                ranges=amino_acid_ranges_fixed_pool_stride_tanh(), kwargs...)
+# Dispatch for 1-4 tags (covers all current use cases)
+const TagType = Union{Nucleotides,AminoAcids,Simple,FixedPoolStride,Multioutputs,UseTanh,UseSigmoid,Bottleneck}
+
+create_model(t1::TagType, input_dims, output_dim, batch_size::Int; kwargs...) = 
+    _create_model_with_tags((t1,), input_dims, output_dim, batch_size; kwargs...)
+
+create_model(t1::TagType, t2::TagType, input_dims, output_dim, batch_size::Int; kwargs...) = 
+    _create_model_with_tags((t1, t2), input_dims, output_dim, batch_size; kwargs...)
+
+create_model(t1::TagType, t2::TagType, t3::TagType, input_dims, output_dim, batch_size::Int; kwargs...) = 
+    _create_model_with_tags((t1, t2, t3), input_dims, output_dim, batch_size; kwargs...)
+
+create_model(t1::TagType, t2::TagType, t3::TagType, t4::TagType, input_dims, output_dim, batch_size::Int; kwargs...) = 
+    _create_model_with_tags((t1, t2, t3, t4), input_dims, output_dim, batch_size; kwargs...)
+
+# ────────────────────────────────────────────────────────────────────────────
+# Backward-Compatible Convenience Constructors
+# (Thin wrappers around the dispatched create_model — safe to call from
+#  existing code; new code should prefer the tag-based API above.)
+# ────────────────────────────────────────────────────────────────────────────
+
+create_model_nucleotides(args...; kw...) =
+    create_model(Nucleotides(), args...; kw...)
+
+create_model_nucleotides_simple(args...; kw...) =
+    create_model(Nucleotides(), Simple(), args...; kw...)
+
+create_model_nucleotides_fixed_pool_stride(args...; kw...) =
+    create_model(Nucleotides(), FixedPoolStride(), args...; kw...)
+
+create_model_aminoacids(args...; kw...) =
+    create_model(AminoAcids(), args...; kw...)
+
+create_model_aminoacids_fixed_pool_stride(args...; kw...) =
+    create_model(AminoAcids(), FixedPoolStride(), args...; kw...)
+
+create_model_aminoacids_fixed_pool_stride_w_bottleneck(args...; kw...) =
+    create_model(AminoAcids(), FixedPoolStride(), Bottleneck(), args...; kw...)
+
+# Tanh variants
+create_model_nucleotides_tanh(args...; kw...) =
+    create_model(Nucleotides(), UseTanh(), args...; kw...)
+
+create_model_nucleotides_simple_tanh(args...; kw...) =
+    create_model(Nucleotides(), Simple(), UseTanh(), args...; kw...)
+
+create_model_nucleotides_fixed_pool_stride_tanh(args...; kw...) =
+    create_model(Nucleotides(), FixedPoolStride(), UseTanh(), args...; kw...)
+
+create_model_nucleotides_fixed_pool_stride_multioutputs(args...; kw...) =
+    create_model(Nucleotides(), FixedPoolStride(), Multioutputs(), args...; kw...)
+
+create_model_nucleotides_fixed_pool_stride_multioutputs_tanh(args...; kw...) =
+    create_model(Nucleotides(), FixedPoolStride(), Multioutputs(), UseTanh(), args...; kw...)
+
+create_model_aminoacids_tanh(args...; kw...) =
+    create_model(AminoAcids(), UseTanh(), args...; kw...)
+
+create_model_aminoacids_fixed_pool_stride_tanh(args...; kw...) =
+    create_model(AminoAcids(), FixedPoolStride(), UseTanh(), args...; kw...)
+
+# Sigmoid variants
+create_model_nucleotides_sigmoid(args...; kw...) =
+    create_model(Nucleotides(), UseSigmoid(), args...; kw...)
+
+create_model_nucleotides_simple_sigmoid(args...; kw...) =
+    create_model(Nucleotides(), Simple(), UseSigmoid(), args...; kw...)
+
+create_model_nucleotides_fixed_pool_stride_sigmoid(args...; kw...) =
+    create_model(Nucleotides(), FixedPoolStride(), UseSigmoid(), args...; kw...)
+
+create_model_nucleotides_fixed_pool_stride_multioutputs_sigmoid(args...; kw...) =
+    create_model(Nucleotides(), FixedPoolStride(), Multioutputs(), UseSigmoid(), args...; kw...)
+
+create_model_aminoacids_sigmoid(args...; kw...) =
+    create_model(AminoAcids(), UseSigmoid(), args...; kw...)
+
+create_model_aminoacids_fixed_pool_stride_sigmoid(args...; kw...) =
+    create_model(AminoAcids(), FixedPoolStride(), UseSigmoid(), args...; kw...)

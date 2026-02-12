@@ -1,6 +1,6 @@
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 # Hyperparameter Range Specifications
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 
 """
     HyperParamRanges
@@ -33,9 +33,9 @@ end
 
 const DEFAULT_RANGES = HyperParamRanges()
 
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 # Domain-Specific Range Presets
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 
 """
     nucleotide_ranges(; kwargs...)
@@ -123,9 +123,9 @@ amino_acid_ranges_fixed_pool_stride(; kwargs...) = HyperParamRanges(;
 )
 
 
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 # Tanh variants (for models with tanh final nonlinearity)
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 
 nucleotide_ranges_tanh(; kwargs...) = nucleotide_ranges(; final_nonlinearity=tanh, kwargs...)
 amino_acid_ranges_tanh(; kwargs...) = amino_acid_ranges(; final_nonlinearity=tanh, kwargs...)
@@ -133,3 +133,14 @@ nucleotide_ranges_simple_tanh(; kwargs...) = nucleotide_ranges_simple(; final_no
 nucleotide_ranges_fixed_pool_stride_tanh(; kwargs...) = nucleotide_ranges_fixed_pool_stride(; final_nonlinearity=tanh, kwargs...)
 nucleotide_ranges_fixed_pool_stride_multioutputs_tanh(; kwargs...) = nucleotide_ranges_fixed_pool_stride_multioutputs(; final_nonlinearity=tanh, kwargs...)
 amino_acid_ranges_fixed_pool_stride_tanh(; kwargs...) = amino_acid_ranges_fixed_pool_stride(; final_nonlinearity=tanh, kwargs...)
+
+# ────────────────────────────────────────────────────────────────────────────
+# Sigmoid variants (for models with sigmoid final nonlinearity)
+# ────────────────────────────────────────────────────────────────────────────
+
+nucleotide_ranges_sigmoid(; kwargs...) = nucleotide_ranges(; final_nonlinearity=Flux.sigmoid, kwargs...)
+amino_acid_ranges_sigmoid(; kwargs...) = amino_acid_ranges(; final_nonlinearity=Flux.sigmoid, kwargs...)
+nucleotide_ranges_simple_sigmoid(; kwargs...) = nucleotide_ranges_simple(; final_nonlinearity=Flux.sigmoid, kwargs...)
+nucleotide_ranges_fixed_pool_stride_sigmoid(; kwargs...) = nucleotide_ranges_fixed_pool_stride(; final_nonlinearity=Flux.sigmoid, kwargs...)
+nucleotide_ranges_fixed_pool_stride_multioutputs_sigmoid(; kwargs...) = nucleotide_ranges_fixed_pool_stride_multioutputs(; final_nonlinearity=Flux.sigmoid, kwargs...)
+amino_acid_ranges_fixed_pool_stride_sigmoid(; kwargs...) = amino_acid_ranges_fixed_pool_stride(; final_nonlinearity=Flux.sigmoid, kwargs...)

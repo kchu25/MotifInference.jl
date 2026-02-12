@@ -1,6 +1,6 @@
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 # Channel Masking Layer
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 # Learnable channel-wise masking with Gumbel-Softmax
 # - Each channel gets a learned importance score via 1x1 convolution
 # - Spatial positions are aggregated (summed) to get channel-level mask

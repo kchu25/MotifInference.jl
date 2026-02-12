@@ -8,16 +8,16 @@ using Random
 using ChainRulesCore: @ignore_derivatives
 using Statistics: mean, var
 
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 # Constants
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 
 const DEFAULT_FLOAT_TYPE = Float32
 const SOFTMAX_ALPHA = DEFAULT_FLOAT_TYPE(500)
 const BOTTLENECK_FILTERS = 5
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 # Core Components (Order Matters)
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 
 include("hyperparameters.jl")
 include("utils.jl")
@@ -28,9 +28,9 @@ include("loss.jl")
 include("convert.jl")
 include("processors/processor.jl")
 
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 # Exports
-# ============================================================================
+# ────────────────────────────────────────────────────────────────────────────
 
 # Types
 export SeqCNN
@@ -47,8 +47,11 @@ export amino_acid_ranges_fixed_pool_stride
 export receptive_field, with_batch_size, with_mbconv, num_layers
 export efficientnet_mbconv_config, with_efficientnet_mbconv
 
-# Model construction
+# Model construction — dispatch tag types
+export Nucleotides, AminoAcids, Simple, FixedPoolStride, Multioutputs, UseTanh, UseSigmoid, Bottleneck
+export model_ranges
 export create_model
+# Backward-compatible convenience names (thin wrappers)
 export create_model_nucleotides, create_model_nucleotides_simple
 export create_model_nucleotides_fixed_pool_stride
 export create_model_aminoacids, create_model_aminoacids_fixed_pool_stride
