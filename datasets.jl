@@ -1,0 +1,57 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Dataset registry
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# This file defines the registered datasets. The functional utilities
+# (resolve_model_creator, dataset constructor, load_datasets) are defined in
+# dataset_utils.jl, which is included by MotifInference.jl before this file.
+#
+# Usage:
+#   datasets = load_datasets()                    # all active datasets
+#   datasets = load_datasets("ecoli", "yeast")    # specific ones by name
+#   run_pipeline(datasets[1])                     # run one
+#
+# To add a new dataset, just add an entry to DATASETS below.
+# ─────────────────────────────────────────────────────────────────────────────
+
+const DATASETS = [
+    # ——— Promoter / expression ———
+    dataset(name="yeast",  file="yeast.jld2",  seed=13, activation_thresh=0.8),
+    dataset(name="ecoli",  file="ecoli.jld2",  seed=2,  activation_thresh=0.8),
+
+    # ——— RNA binding ———
+    dataset(name="RNAcompeteMINIMAL", file="RNAcompete.jld2", 
+            seq_type=:rna, normalization=:log, seed=52, 
+            activation_thresh=0.95, multioutput=true),
+
+    # ——— 5' UTR ———
+    dataset(name="utr_yeast",  file="utr_yeast.jld2",  seq_type=:rna, seed=39),
+    dataset(name="utr_human",  file="utr_human.jld2",  seq_type=:rna, seed=63),
+
+    # ——— 3' UTR / mRNA degradation ———
+    dataset(name="utr_mrna_degradation", file="utr_degradation.jld2", 
+            seq_type=:rna, seed=9, multioutput=true),
+
+    # ——— Gene therapy 5' UTR ———
+    dataset(name="utr_5p_gene_therapy",          file="utr_5p.jld2",        seq_type=:rna, seed=13),
+    dataset(name="utr_5p_gene_therapy/MUSCLE",   file="utr_5p_MUSCLE.jld2", seq_type=:rna, seed=52),
+    dataset(name="utr_5p_gene_therapy_hek_screen_data", file="utr_5p_screen.jld2", seq_type=:rna, seed=40),
+
+    # ——— Plant promoters ———
+    dataset(name="jores_leaf",   file="jores_leaf.jld2",  seed=1),
+    dataset(name="jores_proto",  file="jores_proto.jld2", seed=1),
+
+    # ——— Splicing ———
+    dataset(name="rosenberg2015_5p", file="rosenberg2015_A5SS.jld2", seed=1),
+    dataset(name="rosenberg2015_3p", file="rosenberg2015_A3SS.jld2", seed=1),
+]
+
+const DATASETS_MUT = [
+    dataset(name="LAC_REPRESSION", file="LacI_repression.jld2", 
+            seq_type=:protein, type=:mut, seed=50, activation_thresh=0.95),
+]
+
+const DATASETS_DEBUG = [
+    dataset(name="debug_1", file="debug_1.jld2", seed=nothing, activation_thresh=0.9, motif_sizes=[2,3,4]),
+    dataset(name="debug_2", file="debug_2.jld2", seed=nothing, activation_thresh=0.9),
+]

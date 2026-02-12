@@ -15,15 +15,16 @@ using SEQ2EXPdata
 using GlyphEctoplasm
 using BanzhafInference
 
-
-
-
 include("struct_def.jl")
 include("tuning_and_train_final.jl")
 include("plotting.jl")
 include("run_thru.jl")
 
-export VeryBasicCNN2
+include("dataset_utils.jl")
+include("datasets.jl")
+include("pipeline.jl")
+
+export VeryBasicCNN2, DATASETS, DATASETS_MUT, DATASETS_DEBUG
 # export EfficientNetSeq2label
 
 end
