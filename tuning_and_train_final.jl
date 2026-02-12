@@ -1,7 +1,7 @@
 
 function perform_hyperparameter_tuning(data, trc; 
     trial_number_start=1, max_epochs=40, n_trials=50, patience=5)
-    AutoComputationalGraphTuning.tune_hyperparameters(data, 
+    results, best_model, best_info = AutoComputationalGraphTuning.tune_hyperparameters(data, 
         trc.model_creator;
         trial_number_start=trial_number_start, 
         n_trials=n_trials, 
@@ -10,6 +10,7 @@ function perform_hyperparameter_tuning(data, trc;
         max_epochs=max_epochs, 
         patience=patience,
         print_every=100);
+    return results, best_model, best_info
 end
 
 function train_and_evaluate_model(data, model_creator, save_where, seed; 
