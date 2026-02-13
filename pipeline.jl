@@ -167,7 +167,7 @@ and process all (or selected) output indices with HTML rendering.
 - `tune_patience=10`: early stopping patience
 - `output_indices=nothing`: which outputs to process (default: all if `trc.predict_position == :all`)
 """
-function run_pipeline(trc; tune_max_epochs=15, tune_n_trials=2, tune_patience=5, output_indices=nothing)
+function run_pipeline(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing)
     data = load_data(trc)
     tune_if_needed!(trc, data; tune_max_epochs, tune_n_trials, tune_patience)
 
