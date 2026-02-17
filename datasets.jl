@@ -38,8 +38,8 @@ const DATASETS = [
     dataset(name="utr_5p_gene_therapy_hek_screen_data", file="utr_5p_screen.jld2", seq_type=:rna, seed=40),
 
     # ——— Plant promoters ———
-    dataset(name="jores_leaf",   file="jores_leaf.jld2",  seed=1),
-    dataset(name="jores_proto",  file="jores_proto.jld2", seed=1),
+    dataset(name="jores_leaf",   file="jores_leaf.jld2",  seed=43),
+    dataset(name="jores_proto",  file="jores_proto.jld2", seed=39),
 
     # ——— Splicing ———
     dataset(name="rosenberg2015_5p", file="rosenberg2015_A5SS.jld2", seed=nothing),
