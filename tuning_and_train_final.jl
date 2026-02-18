@@ -86,7 +86,7 @@ function train_and_evaluate_processor!(m, dl_train, dl_test, save_where, seed, p
 
      # TODO: Sanity check: Ensure that the number of predictions matches the number of labels
 
-    return processor, proc_stats, pts_all
+    return processor, proc_stats, pts_all, pts_test
 end
 
 """

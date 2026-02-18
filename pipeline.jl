@@ -110,12 +110,10 @@ Returns: (contributions_df_filtered, dfs, interaction_summaries_str,
           interaction_summaries, render_folder_name)
 """
 function process_output(data, m, train_stats, dl_train, dl_test, trc, output_index)
-    processor, pts_all = MotifInference.obtain_processor(m, dl_train, dl_test, trc; 
-        predict_position=output_index)
+    processor, pts_all, pts_test = MotifInference.obtain_processor(m, dl_train, dl_test, trc; predict_position=output_index)
 
     contributions_df_filtered, contributions_df_filtered_singletons, dfs = 
-        MotifInference.load_or_save_raw_motifs(data, m, processor, train_stats, trc; 
-        output_index=output_index)
+        MotifInference.load_or_save_raw_motifs(data, m, processor, train_stats, trc; output_index=output_index)
 
     # Tag significant singletons
     significant_fils = contributions_df_filtered_singletons.filter_index |> Set
@@ -135,8 +133,7 @@ function process_output(data, m, train_stats, dl_train, dl_test, trc, output_ind
         end
     end
 
-    return contributions_df_filtered, dfs, pts_all, interaction_summaries_str, 
-           interaction_summaries, render_folder_name
+    return contributions_df_filtered, dfs, pts_all, pts_test, interaction_summaries_str, interaction_summaries, render_folder_name
 end
 
 """
@@ -145,11 +142,8 @@ end
 
 Generate the HTML motif visualization pages.
 """
-function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, 
-                     all_indices, interaction_summaries_str, render_folder_name)
-    MotifInference.GlyphEctoplasm.plot_motifs_conv_case(data, m, trc.motif_sizes, 
-        contributions_df_filtered, dfs, pts_all, all_indices; 
-        interaction_summaries=interaction_summaries_str,    
+function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name)
+    MotifInference.GlyphEctoplasm.plot_motifs_conv_case(data, m, trc.motif_sizes, contributions_df_filtered, dfs, pts_all, pts_test, all_indices; interaction_summaries=interaction_summaries_str,    
         dpi=trc.dpi, 
         save_path=joinpath(trc.save_path, render_folder_name), 
         page_title=trc.title_string, 
@@ -193,12 +187,10 @@ function run_pipeline(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5
     for output_index in indices
         @info "Processing output $output_index / $(length(indices))..."
 
-        contributions_df_filtered, dfs, pts_all, interaction_summaries_str, 
-            interaction_summaries, render_folder_name = 
+        contributions_df_filtered, dfs, pts_all, pts_test, interaction_summaries_str, interaction_summaries, render_folder_name = 
             process_output(data, m, train_stats, dl_train_eval, dl_test_eval, trc, output_index)
 
-        render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, 
-                    all_indices, interaction_summaries_str, render_folder_name)
+        render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name)
 
         @info "Output $output_index done → $(render_folder_name)"
     end

@@ -7,11 +7,14 @@ function obtain_trained_model_and_splited_datasets(data, trc)
     return m, train_stats, dl_train_eval, dl_test_eval, split_indices
 end
 
-function obtain_processor(m, dl_train, dl_test, trc; predict_position=1)
-    processor, _, pts_all = train_and_evaluate_processor!(
+function obtain_processor(m, dl_train, dl_test, trc; 
+    predict_position=1, scale_back=true, train_stats=nothing)
+
+    processor, _, pts_all, pts_test = train_and_evaluate_processor!(
         m, dl_train, dl_test, trc.save_path, trc.seed, VeryBasicCNN2.proc_wrap; 
         predict_position=predict_position, max_epochs=trc.max_processor_epochs);
-    return processor, pts_all
+
+    return processor, pts_all, pts_test
 end
 
 """
