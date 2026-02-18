@@ -41,7 +41,7 @@ function plot_motifs_conv_case(data, m, motif_sizes,
     for (motif_size, group_id, button_text) in zip(motif_sizes, group_ids, button_texts)
         @info "Processing multi-motifs of size: $(motif_size)"
         @time next_idx = process_multi_motifs!(dfs, 
-            config, json_motifs, html_dict;             
+            config, json_motifs, html_dict;
                 interaction_summary=interaction_summary,
                 motif_size=motif_size, group_id=group_id, 
                 button_text=button_text, start_idx=next_idx, rna=rna                

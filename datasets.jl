@@ -42,9 +42,9 @@ const DATASETS = [
     dataset(name="jores_proto",  file="jores_proto.jld2", seed=39),
 
     # ——— Splicing ———
-    dataset(name="rosenberg2015_5p", file="rosenberg2015_A5SS.jld2", seed=nothing),
-    dataset(name="rosenberg2015_3p", file="rosenberg2015_A3SS.jld2", seed=nothing),
-    dataset(name="splirent", file="splirent.jld2", seed=nothing, multioutput=true)
+    dataset(name="rosenberg2015_5p", file="rosenberg2015_A5SS.jld2", seed=15),
+    dataset(name="rosenberg2015_3p", file="rosenberg2015_A3SS.jld2", seed=1),
+    dataset(name="splirent", file="splirent.jld2", seed=6, multioutput=true)
 ]
 
 const DATASETS_MUT = [
