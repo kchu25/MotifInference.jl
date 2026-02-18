@@ -16,8 +16,8 @@
 
 const DATASETS = [
     # ——— Promoter / expression ———
-    dataset(name="yeast",  file="yeast.jld2",  seed=13, activation_thresh=0.8),
-    dataset(name="ecoli",  file="ecoli.jld2",  seed=2,  activation_thresh=0.8),
+    dataset(name="yeast",  file="yeast.jld2",  seed=13, motif_sizes=[2,3,4],activation_thresh=0.8),
+    dataset(name="ecoli",  file="ecoli.jld2",  seed=2, motif_sizes=[2,3,4],activation_thresh=0.8),
 
     # ——— RNA binding ———
     dataset(name="RNAcompeteMINIMAL", file="RNAcompete.jld2", 
@@ -38,8 +38,8 @@ const DATASETS = [
     dataset(name="utr_5p_gene_therapy_hek_screen_data", file="utr_5p_screen.jld2", seq_type=:rna, seed=40),
 
     # ——— Plant promoters ———
-    dataset(name="jores_leaf",   file="jores_leaf.jld2",  seed=43),
-    dataset(name="jores_proto",  file="jores_proto.jld2", seed=39),
+    dataset(name="jores_leaf",   file="jores_leaf.jld2",  motif_sizes=[2,3,4], seed=43),
+    dataset(name="jores_proto",  file="jores_proto.jld2", motif_sizes=[2,3,4], seed=39),
 
     # ——— Splicing ———
     dataset(name="rosenberg2015_5p", file="rosenberg2015_A5SS.jld2", seed=15),

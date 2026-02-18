@@ -110,7 +110,7 @@ Returns: (contributions_df_filtered, dfs, interaction_summaries_str,
           interaction_summaries, render_folder_name)
 """
 function process_output(data, m, train_stats, dl_train, dl_test, trc, output_index)
-    processor, pts_train, pts = MotifInference.obtain_processor(m, dl_train, dl_test, trc; 
+    processor, pts_all = MotifInference.obtain_processor(m, dl_train, dl_test, trc; 
         predict_position=output_index)
 
     contributions_df_filtered, contributions_df_filtered_singletons, dfs = 
@@ -135,20 +135,20 @@ function process_output(data, m, train_stats, dl_train, dl_test, trc, output_ind
         end
     end
 
-    return contributions_df_filtered, dfs, pts_train, pts, interaction_summaries_str, 
+    return contributions_df_filtered, dfs, pts_all, interaction_summaries_str, 
            interaction_summaries, render_folder_name
 end
 
 """
     render_html(data, m, trc, contributions_df_filtered, dfs, pts, 
-                split_indices, interaction_summaries_str, render_folder_name)
+                all_indices, interaction_summaries_str, render_folder_name)
 
 Generate the HTML motif visualization pages.
 """
-function render_html(data, m, trc, contributions_df_filtered, dfs, pts, 
-                     split_indices, interaction_summaries_str, render_folder_name)
+function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, 
+                     all_indices, interaction_summaries_str, render_folder_name)
     MotifInference.GlyphEctoplasm.plot_motifs_conv_case(data, m, trc.motif_sizes, 
-        contributions_df_filtered, dfs, pts, split_indices; 
+        contributions_df_filtered, dfs, pts_all, all_indices; 
         interaction_summaries=interaction_summaries_str,    
         dpi=trc.dpi, 
         save_path=joinpath(trc.save_path, render_folder_name), 
@@ -172,8 +172,11 @@ function run_pipeline(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5
     data = load_data(trc)
     tune_if_needed!(trc, data; tune_max_epochs, tune_n_trials, tune_patience)
 
-    m, train_stats, dl_train, dl_test, split_indices = 
+    m, train_stats, dl_train_eval, dl_test_eval, split_indices = 
         MotifInference.obtain_trained_model_and_splited_datasets(data, trc)
+
+    # use all of the data points for motif indicator plot
+    all_indices = vcat(split_indices.train, split_indices.test)
 
     # Determine which outputs to process
     indices = if !isnothing(output_indices)
@@ -190,12 +193,12 @@ function run_pipeline(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5
     for output_index in indices
         @info "Processing output $output_index / $(length(indices))..."
 
-        contributions_df_filtered, dfs, pts_train, pts, interaction_summaries_str, 
+        contributions_df_filtered, dfs, pts_all, interaction_summaries_str, 
             interaction_summaries, render_folder_name = 
-            process_output(data, m, train_stats, dl_train, dl_test, trc, output_index)
+            process_output(data, m, train_stats, dl_train_eval, dl_test_eval, trc, output_index)
 
-        render_html(data, m, trc, contributions_df_filtered, dfs, pts, 
-                    split_indices, interaction_summaries_str, render_folder_name)
+        render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, 
+                    all_indices, interaction_summaries_str, render_folder_name)
 
         @info "Output $output_index done → $(render_folder_name)"
     end

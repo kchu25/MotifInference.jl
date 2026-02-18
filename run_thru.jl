@@ -1,17 +1,17 @@
 
 function obtain_trained_model_and_splited_datasets(data, trc)
     # train the model using train + validation data
-    m, train_stats, dl_train, dl_test, split_indices = 
+    m, train_stats, dl_train_eval, dl_test_eval, split_indices = 
             train_and_evaluate_model(data, trc.model_creator, trc.save_path, trc.seed; 
             max_epochs=trc.max_training_epochs, patience=trc.patience,);
-    return m, train_stats, dl_train, dl_test, split_indices
+    return m, train_stats, dl_train_eval, dl_test_eval, split_indices
 end
 
 function obtain_processor(m, dl_train, dl_test, trc; predict_position=1)
-    processor, _, pts_train, pts = train_and_evaluate_processor!(
+    processor, _, pts_all = train_and_evaluate_processor!(
         m, dl_train, dl_test, trc.save_path, trc.seed, VeryBasicCNN2.proc_wrap; 
         predict_position=predict_position, max_epochs=trc.max_processor_epochs);
-    return processor, pts_train, pts
+    return processor, pts_all
 end
 
 """

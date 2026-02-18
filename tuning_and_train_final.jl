@@ -29,13 +29,13 @@ function train_and_evaluate_model(data, model_creator, save_where, seed;
         m = model2gpu(model_cpu)
         
         # Recreate dataloaders
-        _, _, _, dl_train, dl_test, split_indices = 
+        _, _, _, _, _, split_indices = 
             AutoComputationalGraphTuning.train_final_model_from_config(
                 data, model_creator, config_json; 
                 max_epochs=0, patience=10, print_every=100)
     else
         println("Training new model...")
-        m, stats, train_stats, dl_train, dl_test, split_indices = 
+        m, stats, train_stats, _, _, split_indices = 
             AutoComputationalGraphTuning.train_final_model_from_config(
                 data, model_creator, config_json; 
                 max_epochs=max_epochs, patience=patience, print_every=print_every)
@@ -46,7 +46,11 @@ function train_and_evaluate_model(data, model_creator, save_where, seed;
     end
     
     m.training[] = false  # Ensure evaluation mode
-    return m, train_stats, dl_train, dl_test, split_indices
+
+    setup, batch_size = AutoComputationalGraphTuning._prepare_final_model_setup(data, model_creator; config_json.seed, config_json.randomize_batchsize)
+    dl_train_eval, dl_test_eval = AutoComputationalGraphTuning._create_eval_dataloaders(setup, batch_size)
+
+    return m, train_stats, dl_train_eval, dl_test_eval, split_indices
 end
 
 function train_and_evaluate_processor!(m, dl_train, dl_test, save_where, seed, pw; 
@@ -75,8 +79,27 @@ function train_and_evaluate_processor!(m, dl_train, dl_test, save_where, seed, p
     _, pts_train = AutoComputationalGraphTuning.evaluate_processor(
         m, processor, dl_train, "Train"; predict_position=predict_position)
     
-    proc_stats, pts = AutoComputationalGraphTuning.evaluate_processor(
+    proc_stats, pts_test = AutoComputationalGraphTuning.evaluate_processor(
         m, processor, dl_test, "Test"; predict_position=predict_position)
     
-    return processor, proc_stats, pts_train, pts
+    pts_all = merge_pts(pts_train, pts_test)
+
+     # TODO: Sanity check: Ensure that the number of predictions matches the number of labels
+
+    return processor, proc_stats, pts_all
+end
+
+"""
+    merge_pts(pts_train, pts_test)
+
+Concatenate `pts_train` and `pts_test` into a single object with the same
+fields (`predictions`, `labels`, `proc_prod`), each formed by `vcat`-ing the
+train and test counterparts.
+"""
+function merge_pts(pts_train, pts_test)
+    return (;
+        predictions = vcat(pts_train.predictions, pts_test.predictions),
+        labels      = vcat(pts_train.labels,      pts_test.labels),
+        proc_prod   = vcat(pts_train.proc_prod,   pts_test.proc_prod),
+    )
 end
