@@ -110,7 +110,7 @@ Returns: (contributions_df_filtered, dfs, interaction_summaries_str,
           interaction_summaries, render_folder_name)
 """
 function process_output(data, m, train_stats, dl_train, dl_test, trc, output_index)
-    processor, pts = MotifInference.obtain_processor(m, dl_train, dl_test, trc; 
+    processor, pts_train, pts = MotifInference.obtain_processor(m, dl_train, dl_test, trc; 
         predict_position=output_index)
 
     contributions_df_filtered, contributions_df_filtered_singletons, dfs = 
@@ -135,7 +135,7 @@ function process_output(data, m, train_stats, dl_train, dl_test, trc, output_ind
         end
     end
 
-    return contributions_df_filtered, dfs, pts, interaction_summaries_str, 
+    return contributions_df_filtered, dfs, pts_train, pts, interaction_summaries_str, 
            interaction_summaries, render_folder_name
 end
 
@@ -190,7 +190,7 @@ function run_pipeline(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5
     for output_index in indices
         @info "Processing output $output_index / $(length(indices))..."
 
-        contributions_df_filtered, dfs, pts, interaction_summaries_str, 
+        contributions_df_filtered, dfs, pts_train, pts, interaction_summaries_str, 
             interaction_summaries, render_folder_name = 
             process_output(data, m, train_stats, dl_train, dl_test, trc, output_index)
 

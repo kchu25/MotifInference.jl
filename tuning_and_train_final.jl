@@ -78,5 +78,5 @@ function train_and_evaluate_processor!(m, dl_train, dl_test, save_where, seed, p
     proc_stats, pts = AutoComputationalGraphTuning.evaluate_processor(
         m, processor, dl_test, "Test"; predict_position=predict_position)
     
-    return processor, proc_stats, pts
+    return processor, proc_stats, pts_train, pts
 end

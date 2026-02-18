@@ -8,10 +8,10 @@ function obtain_trained_model_and_splited_datasets(data, trc)
 end
 
 function obtain_processor(m, dl_train, dl_test, trc; predict_position=1)
-    processor, proc_stats, pts = train_and_evaluate_processor!(
+    processor, _, pts_train, pts = train_and_evaluate_processor!(
         m, dl_train, dl_test, trc.save_path, trc.seed, VeryBasicCNN2.proc_wrap; 
         predict_position=predict_position, max_epochs=trc.max_processor_epochs);
-    return processor, pts
+    return processor, pts_train, pts
 end
 
 """
