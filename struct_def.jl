@@ -11,7 +11,7 @@ mutable struct training_and_rendering_config
     seq_type::Symbol                     # :dna, :rna, or :protein
     type::Symbol                         # :conv or :mut  --> this will affect training and rendering
     normalization_method::Symbol                # :zscore or :log
-    loss_fcn::NamedTuple{(:loss, :agg), Tuple{Function, Function}}  # loss function and aggregation method for training
+    loss_spec::NamedTuple{(:loss, :agg), Tuple{Function, Function}}  # loss function and aggregation method for training
     ###### motif inference fields ######
     scale_back::Bool                     # whether to scale back the normalization for Banzhaf index calculations
     top_and_bot_counts::Int              # number of top and bottom significant motifs to render
@@ -33,7 +33,7 @@ function training_and_rendering_config(
     seed=nothing,
     type=:conv,
     normalization_method=:zscore,    
-    loss_fcn=loss_fcns[:mse],
+    loss_spec=loss_specs[:mse],
     max_training_epochs=40,
     max_processor_epochs=30,
     predict_position=:all,
@@ -48,7 +48,7 @@ function training_and_rendering_config(
     return training_and_rendering_config(        
         datapath, model_creator, seed, max_training_epochs, 
         max_processor_epochs, predict_position, patience, seq_type, type, 
-        normalization_method, loss_fcn, scale_back, top_and_bot_counts, activation_thresh, motif_sizes, count_threshold, Q_threshold, 
+        normalization_method, loss_spec, scale_back, top_and_bot_counts, activation_thresh, motif_sizes, count_threshold, Q_threshold, 
         dpi, save_path, title_string
     )
 end

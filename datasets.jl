@@ -45,8 +45,9 @@ const DATASETS = [
     dataset(name="rosenberg2015_5p", file="rosenberg2015_A5SS.jld2", seed=15),
     dataset(name="rosenberg2015_3p", file="rosenberg2015_A3SS.jld2", seed=1),
     dataset(name="splirent", file="splirent.jld2", seed=6, multioutput=true, 
-    model_creator=VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_multioutputs_sigmoid,
-        normalization_method=:identity, loss_fcn = loss_fcns[:binary_cross_entropy])
+    model_creator=VeryBasicCNN2.
+    create_model_nucleotides_fixed_pool_stride_multioutputs_sigmoid,
+        normalization_method=:identity, loss_spec = loss_specs[:binary_cross_entropy])
 ]
 
 const DATASETS_MUT = [

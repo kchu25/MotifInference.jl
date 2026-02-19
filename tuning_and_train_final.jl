@@ -9,7 +9,7 @@ function perform_hyperparameter_tuning(data, trc;
         save_folder=trc.save_path, 
         max_epochs=max_epochs, 
         patience=patience,
-        loss_fcn=trc.loss_fcn,
+        loss_spec=trc.loss_spec,
         print_every=100);
     return results, best_model, best_info
 end

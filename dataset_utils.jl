@@ -31,7 +31,7 @@ function resolve_model_creator(; seq_type::Symbol, type::Symbol, multioutput::Bo
 end
 
 
-const loss_fcns = Dict(
+const loss_specs = Dict(
     :mse => (loss=Flux.mse, agg=StatsBase.mean),
     :mae => (loss=Flux.mae, agg=StatsBase.mean),
     :huber => (loss=Flux.huber_loss, agg=StatsBase.mean),
@@ -70,7 +70,7 @@ function dataset(;
         motif_sizes::Vector{Int} = [2, 3],
         activation_thresh::Float64 = 0.9,
         multioutput::Bool = false,
-        loss_fcn = loss_fcns[:mse],
+        loss_spec = loss_specs[:mse],
         model_creator = nothing
     )
     if isnothing(model_creator)
@@ -78,7 +78,7 @@ function dataset(;
     end
     return (;
         name, file, model_creator, normalization_method, 
-        type, seq_type, seed, motif_sizes, activation_thresh, loss_fcn
+        type, seq_type, seed, motif_sizes, activation_thresh, loss_spec
     )
 end
 
