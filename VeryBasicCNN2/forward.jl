@@ -217,8 +217,8 @@ function predict_from_sequences(model::SeqCNN, sequences;
     # Format predictions
     preds = format_predictions(linear_out)
     
-    # Apply nonlinearity (currently identity)
-    return apply_nonlinearity ? identity.(preds) : preds
+    # Apply final nonlinearity (e.g. identity, sigmoid, tanh)
+    return apply_nonlinearity ? model.final_nonlinearity.(preds) : preds
 end
 
 """
@@ -290,7 +290,7 @@ function predict_from_code(model::SeqCNN, code;
     linear_out = batched_mul(weights, features)
     preds = format_predictions(linear_out)
     
-    return apply_nonlinearity ? identity.(preds) : preds
+    return apply_nonlinearity ? model.final_nonlinearity.(preds) : preds
 end
 
 """

@@ -70,9 +70,12 @@ function dataset(;
         motif_sizes::Vector{Int} = [2, 3],
         activation_thresh::Float64 = 0.9,
         multioutput::Bool = false,
-        loss_fcn = loss_fcns[:mse]
+        loss_fcn = loss_fcns[:mse],
+        model_creator = nothing
     )
-    model_creator = resolve_model_creator(; seq_type, type, multioutput)
+    if isnothing(model_creator)
+        model_creator = resolve_model_creator(; seq_type, type, multioutput)
+    end
     return (;
         name, file, model_creator, normalization_method, 
         type, seq_type, seed, motif_sizes, activation_thresh, loss_fcn

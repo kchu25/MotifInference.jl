@@ -24,7 +24,7 @@ function obtain_motifs(data, m, processor, train_stats, trc; predict_position=1)
     contribs_filtered, contributions_df_filtered, ec, ac, mdc, bc = 
         BanzhafInference.obtain_contribs_filtered_and_configs(
             data, m, processor, train_stats; 
-            scale_back=trc.scale_back, 
+            scale_back=trc.scale_back,
             activation_thresh=trc.activation_thresh, 
             predict_position=predict_position);
 
