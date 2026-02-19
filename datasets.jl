@@ -21,7 +21,7 @@ const DATASETS = [
 
     # ——— RNA binding ———
     dataset(name="RNAcompeteMINIMAL", file="RNAcompete.jld2", 
-            seq_type=:rna, normalization=:log, seed=52, 
+            seq_type=:rna, normalization_method=:log, seed=52,             
             activation_thresh=0.95, multioutput=true),
 
     # ——— 5' UTR ———
@@ -44,7 +44,8 @@ const DATASETS = [
     # ——— Splicing ———
     dataset(name="rosenberg2015_5p", file="rosenberg2015_A5SS.jld2", seed=15),
     dataset(name="rosenberg2015_3p", file="rosenberg2015_A3SS.jld2", seed=1),
-    dataset(name="splirent", file="splirent.jld2", seed=6, multioutput=true)
+    dataset(name="splirent", file="splirent.jld2", seed=6, multioutput=true, 
+        normalization_method=:identity, loss_fcn = loss_fcns[:binary_cross_entropy])
 ]
 
 const DATASETS_MUT = [

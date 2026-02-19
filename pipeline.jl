@@ -26,7 +26,7 @@ function make_trc(f;
     MotifInference.training_and_rendering_config(
         datapath, f.model_creator, save_path, "n/a";
         seq_type=f.seq_type, seed=f.seed, type=f.type,
-        motif_sizes=f.motif_sizes, normalization=f.normalization,
+        motif_sizes=f.motif_sizes, normalization_method=f.normalization_method,
         activation_thresh=f.activation_thresh
     )
 end
@@ -40,7 +40,7 @@ Infers the dataset name from the filename and uses sensible defaults.
 # Keyword Arguments
 - `seq_type = :dna`
 - `type = :conv`
-- `normalization = :zscore`
+- `normalization_method = :zscore`
 - `seed = nothing` (triggers tuning)
 - `motif_sizes = [2, 3]`
 - `activation_thresh = 0.9`
@@ -55,7 +55,7 @@ Infers the dataset name from the filename and uses sensible defaults.
 function make_trc(datapath::String;
         seq_type::Symbol = :dna,
         type::Symbol = :conv,
-        normalization::Symbol = :zscore,
+        normalization_method::Symbol = :zscore,
         seed::Union{Int, Nothing} = nothing,
         motif_sizes::Vector{Int} = [2, 3],
         activation_thresh::Float64 = 0.9,
@@ -68,7 +68,7 @@ function make_trc(datapath::String;
     
     MotifInference.training_and_rendering_config(
         datapath, model_creator, save_path, "n/a";
-        seq_type, seed, type, motif_sizes, normalization, activation_thresh
+        seq_type, seed, type, motif_sizes, normalization_method, activation_thresh
     )
 end
 
@@ -249,7 +249,7 @@ function run_pipeline(datapath::String;
         # make_trc kwargs
         seq_type::Symbol = :dna,
         type::Symbol = :conv,
-        normalization::Symbol = :zscore,
+        normalization_method::Symbol = :zscore,
         seed::Union{Int, Nothing} = nothing,
         motif_sizes::Vector{Int} = [2, 3],
         activation_thresh::Float64 = 0.9,
@@ -257,7 +257,7 @@ function run_pipeline(datapath::String;
         results_parent::String = "../RESULTS",
         # run_pipeline kwargs
         kwargs...)
-    trc = make_trc(datapath; seq_type, type, normalization, seed, 
+    trc = make_trc(datapath; seq_type, type, normalization_method, seed, 
                    motif_sizes, activation_thresh, multioutput, results_parent)
     run_pipeline(trc; kwargs...)
 end

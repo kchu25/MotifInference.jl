@@ -5,22 +5,23 @@ function perform_hyperparameter_tuning(data, trc;
         trc.model_creator;
         trial_number_start=trial_number_start, 
         n_trials=n_trials, 
-        normalization_method=trc.normalization,
+        normalization_method=trc.normalization_method,
         save_folder=trc.save_path, 
         max_epochs=max_epochs, 
         patience=patience,
+        loss_fcn=trc.loss_fcn,
         print_every=100);
     return results, best_model, best_info
 end
 
-function train_and_evaluate_model(data, model_creator, save_where, seed; 
+function train_and_evaluate_model(data, trc; 
     max_epochs=40, patience=10, print_every=100)
 
-    model_folder = "$save_where/models/"
-    model_path = joinpath(model_folder, "model_$seed.jld2")
+    model_folder = "$(trc.save_path)/models/"
+    model_path = joinpath(model_folder, "model_$(trc.seed).jld2")
     
     config_json = AutoComputationalGraphTuning.load_trial_config(
-        "$save_where/json/trial_seed_$seed.json")
+        "$(trc.save_path)/json/trial_seed_$(trc.seed).json")
     
     m=nothing
     if isfile(model_path)
@@ -31,13 +32,13 @@ function train_and_evaluate_model(data, model_creator, save_where, seed;
         # Recreate dataloaders
         _, _, _, _, _, split_indices = 
             AutoComputationalGraphTuning.train_final_model_from_config(
-                data, model_creator, config_json; 
+                data, trc.model_creator, config_json, trc;                 
                 max_epochs=0, patience=10, print_every=100)
     else
         println("Training new model...")
         m, stats, train_stats, _, _, split_indices = 
             AutoComputationalGraphTuning.train_final_model_from_config(
-                data, model_creator, config_json; 
+                data, trc.model_creator, config_json, trc; 
                 max_epochs=max_epochs, patience=patience, print_every=print_every)
         
         mkpath(model_folder)
@@ -47,7 +48,7 @@ function train_and_evaluate_model(data, model_creator, save_where, seed;
     
     m.training[] = false  # Ensure evaluation mode
 
-    setup, batch_size = AutoComputationalGraphTuning._prepare_final_model_setup(data, model_creator; config_json.seed, config_json.randomize_batchsize)
+    setup, batch_size = AutoComputationalGraphTuning._prepare_final_model_setup(data, trc.model_creator; config_json.seed, config_json.randomize_batchsize)
     dl_train_eval, dl_test_eval = AutoComputationalGraphTuning._create_eval_dataloaders(setup, batch_size)
 
     return m, train_stats, dl_train_eval, dl_test_eval, split_indices

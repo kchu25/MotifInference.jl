@@ -13,6 +13,7 @@ using Flux
 using SEQ2EXPdata
 using GlyphEctoplasm
 using BanzhafInference
+using StatsBase
 
 include("struct_def.jl")
 include("tuning_and_train_final.jl")

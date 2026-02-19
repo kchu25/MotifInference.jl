@@ -30,6 +30,15 @@ function resolve_model_creator(; seq_type::Symbol, type::Symbol, multioutput::Bo
     end
 end
 
+
+const loss_fcns = Dict(
+    :mse => (loss=Flux.mse, agg=StatsBase.mean),
+    :mae => (loss=Flux.mae, agg=StatsBase.mean),
+    :huber => (loss=Flux.huber_loss, agg=StatsBase.mean),
+    :binary_cross_entropy => (loss=Flux.binarycrossentropy, agg=StatsBase.mean),
+)
+
+
 """
     dataset(; name, file, kwargs...) -> NamedTuple
 
@@ -56,16 +65,17 @@ function dataset(;
         file::String,
         seq_type::Symbol = :dna,
         type::Symbol = :conv,
-        normalization::Symbol = :zscore,
+        normalization_method::Symbol = :zscore,
         seed::Union{Int, Nothing} = nothing,
         motif_sizes::Vector{Int} = [2, 3],
         activation_thresh::Float64 = 0.9,
         multioutput::Bool = false,
+        loss_fcn = loss_fcns[:mse]
     )
     model_creator = resolve_model_creator(; seq_type, type, multioutput)
     return (;
-        name, file, model_creator, normalization, 
-        type, seq_type, seed, motif_sizes, activation_thresh
+        name, file, model_creator, normalization_method, 
+        type, seq_type, seed, motif_sizes, activation_thresh, loss_fcn
     )
 end
 
