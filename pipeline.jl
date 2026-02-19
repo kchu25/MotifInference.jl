@@ -112,8 +112,19 @@ Returns: (contributions_df_filtered, dfs, interaction_summaries_str,
 function process_output(data, m, train_stats, dl_train, dl_test, trc, output_index)
     processor, pts_all, pts_test = MotifInference.obtain_processor(m, dl_train, dl_test, trc; predict_position=output_index)
 
-    contributions_df_filtered, contributions_df_filtered_singletons, dfs = 
+    contributions_df_filtered, contributions_df_filtered_singletons, dfs, scale_back_function = 
         MotifInference.load_or_save_raw_motifs(data, m, processor, train_stats, trc; output_index=output_index)
+
+    # Apply scale_back_function to all fields and reconstruct (NamedTuples are immutable)
+    # note: the function has taken account into the output index for multi-output cases, so we can apply it directly without worrying about the dimensions
+    if trc.scale_back
+        pts_all  = (; predictions = scale_back_function.(pts_all.predictions),
+                    labels      = scale_back_function.(pts_all.labels),
+                    proc_prod   = scale_back_function.(pts_all.proc_prod))
+        pts_test = (; predictions = scale_back_function.(pts_test.predictions),
+                    labels      = scale_back_function.(pts_test.labels),
+                    proc_prod   = scale_back_function.(pts_test.proc_prod))
+    end
 
     # Tag significant singletons
     significant_fils = contributions_df_filtered_singletons.filter_index |> Set

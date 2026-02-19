@@ -75,6 +75,10 @@ function load_or_save_raw_motifs(data, m, processor, train_stats, trc; output_in
         println("Saving motifs cache to: $cache_file")
         @save cache_file contributions_df_filtered contributions_df_filtered_singletons dfs
     end
+
+    # band-aid solution for now
+    is_multioutput = (trc.predict_position == :all) && (data.Y_dim > 1)
+    scale_back_function = BanzhafInference._make_scale_back_function(trc.scale_back, train_stats, is_multioutput, output_index)
     
-    return contributions_df_filtered, contributions_df_filtered_singletons, dfs
+    return contributions_df_filtered, contributions_df_filtered_singletons, dfs, scale_back_function
 end
