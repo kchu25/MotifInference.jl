@@ -67,8 +67,8 @@ function dataset(;
         type::Symbol = :conv,
         normalization_method::Symbol = :zscore,
         seed::Union{Int, Nothing} = nothing,
-        motif_sizes::Vector{Int} = [2, 3],
-        activation_thresh::Float64 = 0.9,
+        motif_sizes::Vector{Int} = [2,3,4,5],
+        activation_thresh::Float64 = 0.95,
         multioutput::Bool = false,
         loss_spec = loss_specs[:mse],
         model_creator = nothing

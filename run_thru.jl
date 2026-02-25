@@ -26,7 +26,9 @@ function obtain_motifs(data, m, processor, train_stats, trc; predict_position=1)
             data, m, processor, train_stats; 
             scale_back=trc.scale_back,
             activation_thresh=trc.activation_thresh, 
-            predict_position=predict_position);
+            predict_position=predict_position,
+            cache_folder_parent = trc.save_path, 
+            normalization_method=trc.normalization_method);
 
     # sample random coalitions (background) for significance testing
     random_coalitions = BanzhafInference.compute_random_coalition_banzhafs_all_datapoints(
@@ -36,12 +38,12 @@ function obtain_motifs(data, m, processor, train_stats, trc; predict_position=1)
     mutegenesis = trc.type == :mut
 
     # singletons motifs
-    df_significant, contributions_df_filtered_singletons = 
+    contributions_df_filtered_singletons = 
         BanzhafInference.single_motifs_and_significance_filtering!(
             ac, ec, contribs_filtered, contributions_df_filtered, random_coalitions; 
                 mutegenesis = mutegenesis, top_and_bot_counts=trc.top_and_bot_counts); 
     # multi-motifs
-    dfs, df_significants = BanzhafInference.obtain_multi_motifs_and_banzhafs(
+    dfs = BanzhafInference.obtain_multi_motifs_and_banzhafs(
         contributions_df_filtered, mdc, ec, ac, random_coalitions;
         seed=trc.seed, motif_sizes=trc.motif_sizes, mutegenesis=mutegenesis, 
         COUNT_THRESHOLD=trc.count_threshold, Q_THRESHOLD=trc.Q_threshold, 

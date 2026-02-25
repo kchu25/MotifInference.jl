@@ -10,7 +10,7 @@ mutable struct training_and_rendering_config
     patience::Int                        # patience for triggering early stopping (number of epochs with no improvement)
     seq_type::Symbol                     # :dna, :rna, or :protein
     type::Symbol                         # :conv or :mut  --> this will affect training and rendering
-    normalization_method::Symbol                # :zscore or :log
+    normalization_method::Symbol                # :identity, :zscore, or :log, etc.
     loss_spec::NamedTuple{(:loss, :agg), Tuple{Function, Function}}  # loss function and aggregation method for training
     ###### motif inference fields ######
     scale_back::Bool                     # whether to scale back the normalization for Banzhaf index calculations
