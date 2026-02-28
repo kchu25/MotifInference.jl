@@ -20,7 +20,7 @@ end
 Obtain motifs from the model and save as dataframes for rendering
 """
 function obtain_motifs(data, m, processor, train_stats, trc; predict_position=1)
-    # obtain the contributions and configurations
+    # Step 1: obtain the contributions and configurations
     contribs_filtered, contributions_df_filtered, ec, ac, mdc, bc = 
         BanzhafInference.obtain_contribs_filtered_and_configs(
             data, m, processor, train_stats; 
@@ -30,25 +30,39 @@ function obtain_motifs(data, m, processor, train_stats, trc; predict_position=1)
             cache_folder_parent = trc.save_path, 
             normalization_method=trc.normalization_method);
 
-    # sample random coalitions (background) for significance testing
+    # Step 2: sample random coalitions (background) for significance testing
     random_coalitions = BanzhafInference.compute_random_coalition_banzhafs_all_datapoints(
       contributions_df_filtered, ac, bc; seed=trc.seed, verbose=false
     );
 
     mutegenesis = trc.type == :mut
 
-    # singletons motifs
+    # Step 3: singletons motifs (ec can be freed after this)
     contributions_df_filtered_singletons = 
         BanzhafInference.single_motifs_and_significance_filtering!(
             ac, ec, contribs_filtered, contributions_df_filtered, random_coalitions; 
                 mutegenesis = mutegenesis, top_and_bot_counts=trc.top_and_bot_counts); 
-    # multi-motifs
+
+    # Free memory: ec and contribs_filtered no longer needed
+    ec = nothing
+    contribs_filtered = nothing
+    GC.gc()
+
+
+    # Step 4: multi-motifs (mdc can be freed after this)
     dfs = BanzhafInference.obtain_multi_motifs_and_banzhafs(
         contributions_df_filtered, mdc, ec, ac, random_coalitions;
         seed=trc.seed, motif_sizes=trc.motif_sizes, mutegenesis=mutegenesis, 
         COUNT_THRESHOLD=trc.count_threshold, Q_THRESHOLD=trc.Q_threshold, 
         top_and_bot_counts=trc.top_and_bot_counts
         )
+
+    # Free memory: mdc, ac, bc, random_coalitions no longer needed
+    mdc = nothing
+    ac = nothing
+    bc = nothing
+    random_coalitions = nothing
+    GC.gc()
 
     return contributions_df_filtered, 
            contributions_df_filtered_singletons, 

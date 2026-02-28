@@ -25,7 +25,7 @@ const DATASETS = [
             # activation_thresh=0.95, multioutput=true),
 
     # ——— 5' UTR ———
-    dataset(name="utr_yeast", file="utr_yeast.jld2",  seq_type=:rna, seed=39, normalization_method=:identity, motif_sizes=[2,3,4,5]),
+    dataset(name="utr_yeast", file="utr_yeast.jld2",  seq_type=:rna, seed=nothing, normalization_method=:identity, motif_sizes=[2,3,4,5]),
     dataset(name="utr_human", file="utr_human.jld2",  seq_type=:rna, seed=63, motif_sizes=[2,3,4,5]),
 
     # ——— Gene therapy 5' UTR ———
@@ -38,8 +38,15 @@ const DATASETS = [
     dataset(name="jores_proto",  file="jores_proto.jld2", motif_sizes=[2,3,4,5], seed=39),
 
     # ——— Splicing ———
-    dataset(name="rosenberg2015_5p", normalization_method=:identity, loss_spec = loss_specs[:binary_cross_entropy], file="rosenberg2015_A5SS.jld2", motif_sizes=[2,3,4,5], seed=15),
-    dataset(name="rosenberg2015_3p", normalization_method=:identity, loss_spec = loss_specs[:binary_cross_entropy], file="rosenberg2015_A3SS.jld2", motif_sizes=[2,3,4,5], seed=1),
+    dataset(name="rosenberg2015_5p", normalization_method=:identity, 
+    model_creator= VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_sigmoid,
+    loss_spec = loss_specs[:binary_cross_entropy], file="rosenberg2015_A5SS.jld2", motif_sizes=[2,3,4,5], seed=15),
+
+    dataset(name="rosenberg2015_3p", normalization_method=:identity, 
+    model_creator= VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_sigmoid,
+    loss_spec = loss_specs[:binary_cross_entropy], 
+    file="rosenberg2015_A3SS.jld2", motif_sizes=[2,3,4,5], seed=6),
+
     dataset(name="splirent", file="splirent.jld2", seed=6, multioutput=true, 
     model_creator=VeryBasicCNN2.
     create_model_nucleotides_fixed_pool_stride_multioutputs_sigmoid, motif_sizes=[2,3,4,5], normalization_method=:identity, loss_spec = loss_specs[:binary_cross_entropy]),
@@ -62,4 +69,13 @@ const DATASETS_DEBUG = [
 const DATASETS_subsampled = [
         dataset(name="utr_yeast_subsample", file="utr_yeast_subsample.jld2", seq_type=:rna, seed=17, normalization_method=:identity, 
         motif_sizes=[2,3,4]),
+
+        dataset(name="rosenberg2015_3p_subsample", file="rosenberg2015_A3SS_subsample.jld2", seq_type=:rna, seed=nothing, normalization_method=:identity, motif_sizes=[2,3,4,5], 
+        model_creator=VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_sigmoid,
+        loss_spec = loss_specs[:binary_cross_entropy]),
+
+        dataset(name="splirent_subsample", file="splirent_subsample.jld2", 
+        model_creator=VeryBasicCNN2.
+        create_model_nucleotides_fixed_pool_stride_multioutputs_sigmoid,
+        seed=nothing, normalization_method=:identity, multioutput=true, motif_sizes=[2,3,4], loss_spec = loss_specs[:binary_cross_entropy])
 ]

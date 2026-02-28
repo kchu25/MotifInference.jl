@@ -49,7 +49,10 @@ function train_and_evaluate_model(data, trc;
     m.training[] = false  # Ensure evaluation mode
 
     # band-aid for now
-    setup, batch_size = AutoComputationalGraphTuning._prepare_final_model_setup(data, trc.model_creator; config_json.seed, config_json.randomize_batchsize)
+    setup, batch_size = AutoComputationalGraphTuning._prepare_final_model_setup(data, trc.model_creator; 
+    seed = config_json.seed, 
+    randomize_batchsize = config_json.randomize_batchsize, 
+    normalization_method = trc.normalization_method)
     dl_train_eval, dl_test_eval = AutoComputationalGraphTuning._create_eval_dataloaders(setup, batch_size)
 
     return m, train_stats, dl_train_eval, dl_test_eval, split_indices
