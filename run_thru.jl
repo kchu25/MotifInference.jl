@@ -43,8 +43,7 @@ function obtain_motifs(data, m, processor, train_stats, trc; predict_position=1)
             ac, ec, contribs_filtered, contributions_df_filtered, random_coalitions; 
                 mutegenesis = mutegenesis, top_and_bot_counts=trc.top_and_bot_counts); 
 
-    # Free memory: ec and contribs_filtered no longer needed
-    ec = nothing
+    # Free memory:  contribs_filtered no longer needed
     contribs_filtered = nothing
     GC.gc()
 
@@ -58,6 +57,7 @@ function obtain_motifs(data, m, processor, train_stats, trc; predict_position=1)
         )
 
     # Free memory: mdc, ac, bc, random_coalitions no longer needed
+    ec = nothing
     mdc = nothing
     ac = nothing
     bc = nothing

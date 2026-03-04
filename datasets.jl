@@ -25,7 +25,7 @@ const DATASETS = [
             # activation_thresh=0.95, multioutput=true),
 
     # ——— 5' UTR ———
-    dataset(name="utr_yeast", file="utr_yeast.jld2",  seq_type=:rna, seed=nothing, normalization_method=:identity, motif_sizes=[2,3,4,5]),
+    dataset(name="utr_yeast", file="utr_yeast.jld2",  seq_type=:rna, seed=13, normalization_method=:identity, motif_sizes=[2,3,4,5]),
     dataset(name="utr_human", file="utr_human.jld2",  seq_type=:rna, seed=63, motif_sizes=[2,3,4,5]),
 
     # ——— Gene therapy 5' UTR ———
@@ -39,21 +39,21 @@ const DATASETS = [
 
     # ——— Splicing ———
     dataset(name="rosenberg2015_5p", normalization_method=:identity, 
-    model_creator= VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_sigmoid,
+    model_creator= VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_sigmoid, seq_type=:rna,
     loss_spec = loss_specs[:binary_cross_entropy], file="rosenberg2015_A5SS.jld2", motif_sizes=[2,3,4,5], seed=15),
 
     dataset(name="rosenberg2015_3p", normalization_method=:identity, 
-    model_creator= VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_sigmoid,
+    model_creator= VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_sigmoid, seq_type=:rna,
     loss_spec = loss_specs[:binary_cross_entropy], 
-    file="rosenberg2015_A3SS.jld2", motif_sizes=[2,3,4,5], seed=6),
+    file="rosenberg2015_A3SS.jld2", motif_sizes=[2,3,4,5], seed=nothing),
 
     dataset(name="splirent", file="splirent.jld2", seed=6, multioutput=true, 
     model_creator=VeryBasicCNN2.
-    create_model_nucleotides_fixed_pool_stride_multioutputs_sigmoid, motif_sizes=[2,3,4,5], normalization_method=:identity, loss_spec = loss_specs[:binary_cross_entropy]),
+    create_model_nucleotides_fixed_pool_stride_multioutputs_sigmoid, seq_type=:rna, motif_sizes=[2,3,4,5], normalization_method=:identity, loss_spec = loss_specs[:binary_cross_entropy]),
 
     # ——— 3' UTR / mRNA degradation ———
-    dataset(name="utr_mrna_degradation", file="utr_degradation.jld2", 
-            seq_type=:rna, seed=9, multioutput=true),
+#     dataset(name="utr_mrna_degradation", file="utr_degradation.jld2", 
+        #     seq_type=:rna, seed=9, multioutput=true),
 ]
 
 const DATASETS_MUT = [
