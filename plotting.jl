@@ -1,15 +1,15 @@
 
-const motif_names = ["pairs", "triplets", "quadruplets", "quintuplets"]
+# const motif_names = ["pairs", "triplets", "quadruplets", "quintuplets"]
 
-# Collect extrema across all DataFrames without allocation
-function obtain_xlim(contributions_df_filtered_singletons, dfs)
-    xlim = mapreduce(extrema, 
-        (a, b) -> (min(a[1], b[1]), max(a[2], b[2])),
-        (contributions_df_filtered_singletons.banzhaf, 
-            (df.banzhaf for df in dfs)...))
+# # Collect extrema across all DataFrames without allocation
+# function obtain_xlim(contributions_df_filtered_singletons, dfs)
+#     xlim = mapreduce(extrema, 
+#         (a, b) -> (min(a[1], b[1]), max(a[2], b[2])),
+#         (contributions_df_filtered_singletons.banzhaf, 
+#             (df.banzhaf for df in dfs)...))
 
-    return xlim
-end
+#     return xlim
+# end
 
 # function plot_motifs_conv_case(data, m, motif_sizes, 
 #         contributions_df_filtered_singletons, dfs, pts;

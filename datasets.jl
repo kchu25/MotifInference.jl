@@ -14,6 +14,49 @@
 # To add a new dataset, just add an entry to DATASETS below.
 # ─────────────────────────────────────────────────────────────────────────────
 
+# const DATASETS = [
+#     # ——— Promoter / expression ———
+#     dataset(name="yeast",  file="yeast.jld2",  seed=nothing, motif_sizes=[2,3,4,5]),
+#     dataset(name="ecoli",  file="ecoli.jld2",  seed=nothing, motif_sizes=[2,3,4,5], ),
+
+#     # ——— RNA binding ———
+#     # dataset(name="RNAcompeteMINIMAL", file="RNAcompete.jld2", 
+#             # seq_type=:rna, normalization_method=:log, seed=52,             
+#             # activation_thresh=0.95, multioutput=true),
+
+#     # ——— 5' UTR ———
+#     dataset(name="utr_yeast", file="utr_yeast.jld2",  seq_type=:rna, seed=nothing, normalization_method=:identity, motif_sizes=[2,3,4,5]),
+#     dataset(name="utr_human", file="utr_human.jld2",  seq_type=:rna, seed=25, motif_sizes=[2,3,4,5]),
+
+#     # ——— Gene therapy 5' UTR ———
+#     # dataset(name="utr_5p_gene_therapy",          file="utr_5p.jld2",        seq_type=:rna, seed=13),
+#     # dataset(name="utr_5p_gene_therapy/MUSCLE",   file="utr_5p_MUSCLE.jld2", seq_type=:rna, seed=52),
+#     # dataset(name="utr_5p_gene_therapy_hek_screen_data", file="utr_5p_screen.jld2", seq_type=:rna, seed=40),
+
+#     # ——— Plant promoters ———
+#     dataset(name="jores_leaf",   file="jores_leaf.jld2",  motif_sizes=[2,3,4,5], seed=nothing),
+#     dataset(name="jores_proto",  file="jores_proto.jld2", motif_sizes=[2,3,4,5], seed=nothing),
+
+#     # ——— Splicing ———
+#     dataset(name="rosenberg2015_5p", normalization_method=:identity, 
+#     model_creator= VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_sigmoid, seq_type=:rna,
+#     loss_spec = loss_specs[:binary_cross_entropy], file="rosenberg2015_A5SS.jld2", motif_sizes=[2,3,4,5], seed=nothing),
+
+# #     dataset(name="rosenberg2015_3p", normalization_method=:identity, 
+# #     model_creator= VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_sigmoid, seq_type=:rna,
+# #     loss_spec = loss_specs[:binary_cross_entropy], 
+# #     file="rosenberg2015_A3SS.jld2", motif_sizes=[2,3,4,5], seed=nothing),
+
+#     dataset(name="splirent", file="splirent.jld2", seed=nothing, multioutput=true, 
+#     model_creator=VeryBasicCNN2.
+#     create_model_nucleotides_fixed_pool_stride_multioutputs_sigmoid, seq_type=:rna, motif_sizes=[2,3,4,5], normalization_method=:identity, loss_spec = loss_specs[:binary_cross_entropy]),
+
+#     # ——— 3' UTR / mRNA degradation ———
+# #     dataset(name="utr_mrna_degradation", file="utr_degradation.jld2", 
+#         #     seq_type=:rna, seed=9, multioutput=true),
+# ]
+
+# before
 const DATASETS = [
     # ——— Promoter / expression ———
     dataset(name="yeast",  file="yeast.jld2",  seed=13, motif_sizes=[2,3,4,5]),
@@ -25,7 +68,8 @@ const DATASETS = [
             # activation_thresh=0.95, multioutput=true),
 
     # ——— 5' UTR ———
-    dataset(name="utr_yeast", file="utr_yeast.jld2",  seq_type=:rna, seed=13, normalization_method=:identity, motif_sizes=[2,3,4,5]),
+    # dataset(name="utr_yeast", file="utr_yeast.jld2",  seq_type=:rna, seed=13, normalization_method=:identity, motif_sizes=[2,3,4,5]),
+    dataset(name="utr_yeast", file="utr_yeast.jld2",  seq_type=:rna, seed=nothing, normalization_method=:log, motif_sizes=[2,3,4,5]),
     dataset(name="utr_human", file="utr_human.jld2",  seq_type=:rna, seed=63, motif_sizes=[2,3,4,5]),
 
     # ——— Gene therapy 5' UTR ———
@@ -42,10 +86,10 @@ const DATASETS = [
     model_creator= VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_sigmoid, seq_type=:rna,
     loss_spec = loss_specs[:binary_cross_entropy], file="rosenberg2015_A5SS.jld2", motif_sizes=[2,3,4,5], seed=15),
 
-    dataset(name="rosenberg2015_3p", normalization_method=:identity, 
-    model_creator= VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_sigmoid, seq_type=:rna,
-    loss_spec = loss_specs[:binary_cross_entropy], 
-    file="rosenberg2015_A3SS.jld2", motif_sizes=[2,3,4,5], seed=nothing),
+#     dataset(name="rosenberg2015_3p", normalization_method=:identity, 
+#     model_creator= VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_sigmoid, seq_type=:rna,
+#     loss_spec = loss_specs[:binary_cross_entropy], 
+#     file="rosenberg2015_A3SS.jld2", motif_sizes=[2,3,4,5], seed=nothing),
 
     dataset(name="splirent", file="splirent.jld2", seed=6, multioutput=true, 
     model_creator=VeryBasicCNN2.
@@ -55,6 +99,9 @@ const DATASETS = [
 #     dataset(name="utr_mrna_degradation", file="utr_degradation.jld2", 
         #     seq_type=:rna, seed=9, multioutput=true),
 ]
+
+
+
 
 const DATASETS_MUT = [
     dataset(name="LAC_REPRESSION", file="LacI_repression.jld2", 
