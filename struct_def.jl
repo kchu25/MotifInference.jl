@@ -25,7 +25,6 @@ mutable struct training_and_rendering_config
     title_string::String                 # title for the rendered output
 end
 
-
 # Keep the struct as-is, add external constructor
 function training_and_rendering_config(
     datapath, model_creator, save_path, title_string;
@@ -41,7 +40,7 @@ function training_and_rendering_config(
     scale_back=true,
     motif_sizes=[2, 3],
     activation_thresh=0.8,
-    top_and_bot_counts=8,
+    top_and_bot_counts=500, # temporary for now
     count_threshold=25,
     Q_threshold=1e-25,
     dpi=60)

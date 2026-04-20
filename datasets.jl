@@ -68,8 +68,8 @@ const DATASETS = [
             # activation_thresh=0.95, multioutput=true),
 
     # ——— 5' UTR ———
-    # dataset(name="utr_yeast", file="utr_yeast.jld2",  seq_type=:rna, seed=13, normalization_method=:identity, motif_sizes=[2,3,4,5]),
-    dataset(name="utr_yeast", file="utr_yeast.jld2",  seq_type=:rna, seed=nothing, normalization_method=:log, motif_sizes=[2,3,4,5]),
+    dataset(name="utr_yeast", file="utr_yeast.jld2",  seq_type=:rna, seed=13, normalization_method=:identity, motif_sizes=[2,3,4,5]),
+    # dataset(name="utr_yeast", file="utr_yeast.jld2",  seq_type=:rna, seed=15, normalization_method=:log, motif_sizes=[2,3,4,5]),
     dataset(name="utr_human", file="utr_human.jld2",  seq_type=:rna, seed=63, motif_sizes=[2,3,4,5]),
 
     # ——— Gene therapy 5' UTR ———

@@ -1,0 +1,23 @@
+\begin{thebibliography}{3}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Penzar et~al.(2023)Penzar, Nogina, Noskova, Zinkevich, Meshcheryakov, Lando, Rafi, De~Boer, and Kulakovskiy]{penzar2023legnet}
+Dmitry Penzar, Daria Nogina, Elizaveta Noskova, Arsenii Zinkevich, Georgy Meshcheryakov, Andrey Lando, Abdul~Muntakim Rafi, Carl De~Boer, and Ivan~V Kulakovskiy.
+\newblock Legnet: a best-in-class deep learning model for short dna regulatory regions.
+\newblock \emph{Bioinformatics}, 39\penalty0 (8):\penalty0 btad457, 2023.
+
+\bibitem[Tan and Le(2019)]{tan2019efficientnet}
+Mingxing Tan and Quoc Le.
+\newblock Efficientnet: Rethinking model scaling for convolutional neural networks.
+\newblock In \emph{International conference on machine learning}, pages 6105--6114. PMLR, 2019.
+
+\bibitem[Tan and Le(2021)]{tan2021efficientnetv2}
+Mingxing Tan and Quoc Le.
+\newblock Efficientnetv2: Smaller models and faster training.
+\newblock In \emph{International conference on machine learning}, pages 10096--10106. PMLR, 2021.
+
+\end{thebibliography}
