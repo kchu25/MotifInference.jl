@@ -1,6 +1,6 @@
 
-function setup_results_folder(saved_folder; parent_saved_folder="../RESULTS")
-    result_save_folder = joinpath(parent_saved_folder, saved_folder)
+function setup_results_folder(save_folder_name; save_root=".")
+    result_save_folder = joinpath(save_root, save_folder_name)
     mkpath(result_save_folder)
     return result_save_folder
 end
@@ -13,15 +13,18 @@ end
 const datasets_processed_folder = "//home/kchu25/Desktop/work/code/cur_proj/DATASETS_PROCESSED"
 
 """
-    make_trc(f; datasets_folder=datasets_processed_folder, results_parent="../RESULTS")
+    make_trc(f; datasets_folder=datasets_processed_folder, save_root=".", save_folder_name=nothing)
 
 Construct a training_and_rendering_config from a dataset entry (NamedTuple).
+`save_folder_name` defaults to `f.name`.
 """
 function make_trc(f;
     datasets_folder=datasets_processed_folder,
-    results_parent="../RESULTS")
+    save_root=".",
+    save_folder_name=nothing)
     datapath = joinpath(datasets_folder, f.name, f.file)
-    save_path = setup_results_folder(f.name; parent_saved_folder=results_parent)
+    folder = something(save_folder_name, f.name)
+    save_path = setup_results_folder(folder; save_root)
 
     MotifInference.training_and_rendering_config(
         datapath, f.model_creator, save_path, "n/a";
@@ -42,14 +45,16 @@ Infers the dataset name from the filename and uses sensible defaults.
 - `type = :conv`
 - `normalization_method = :zscore`
 - `seed = nothing` (triggers tuning)
-- `motif_sizes = [2, 3]`
+- `motif_sizes = [2, 3, 4, 5]`
 - `activation_thresh = 0.9`
 - `multioutput = false`
-- `results_parent = "../RESULTS"`
+- `save_root = "."` (current working directory)
+- `save_folder_name = nothing` (defaults to the file's basename without extension)
 
 # Examples
     trc = make_trc("/path/to/mydata.jld2")
     trc = make_trc("/path/to/mydata.jld2"; seq_type=:rna, seed=42)
+    trc = make_trc("/path/to/mydata.jld2"; save_root="/custom", save_folder_name="run01")
     run_method(trc)
 """
 function make_trc(datapath::String;
@@ -57,13 +62,14 @@ function make_trc(datapath::String;
     type::Symbol=:conv,
     normalization_method::Symbol=:zscore,
     seed::Union{Int,Nothing}=nothing,
-    motif_sizes::Vector{Int}=[2, 3],
+    motif_sizes::Vector{Int}=[2, 3, 4, 5],
     activation_thresh::Float64=0.9,
     multioutput::Bool=false,
-    results_parent::String="../RESULTS")
+    save_root::String=".",
+    save_folder_name::Union{String,Nothing}=nothing)
 
-    name = splitext(basename(datapath))[1]  # "mydata.jld2" → "mydata"
-    save_path = setup_results_folder(name; parent_saved_folder=results_parent)
+    name = something(save_folder_name, splitext(basename(datapath))[1])
+    save_path = setup_results_folder(name; save_root)
     model_creator = resolve_model_creator(; seq_type, type, multioutput)
 
     MotifInference.training_and_rendering_config(
@@ -243,8 +249,11 @@ Run pipeline from a dataset entry (as returned by `load_datasets()`).
     run_method(ds[1])
     run_method(ds[1]; output_indices=1:5)
 """
-function run_method(f::NamedTuple; kwargs...)
-    trc = make_trc(f)
+function run_method(f::NamedTuple;
+    save_root=".",
+    save_folder_name=nothing,
+    kwargs...)
+    trc = make_trc(f; save_root, save_folder_name)
     run_method(trc; dataset_name=f.name, kwargs...)
 end
 
@@ -273,14 +282,15 @@ function run_method(datapath::String;
     type::Symbol=:conv,
     normalization_method::Symbol=:zscore,
     seed::Union{Int,Nothing}=nothing,
-    motif_sizes::Vector{Int}=[2, 3],
+    motif_sizes::Vector{Int}=[2, 3, 4, 5],
     activation_thresh::Float64=0.9,
     multioutput::Bool=false,
-    results_parent::String="../RESULTS",
+    save_root::String=".",
+    save_folder_name::Union{String,Nothing}=nothing,
     # run_method kwargs
     kwargs...)
     trc = make_trc(datapath; seq_type, type, normalization_method, seed,
-        motif_sizes, activation_thresh, multioutput, results_parent)
+        motif_sizes, activation_thresh, multioutput, save_root, save_folder_name)
     run_method(trc; kwargs...)
 end
 
