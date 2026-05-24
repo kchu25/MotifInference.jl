@@ -50,7 +50,7 @@ Infers the dataset name from the filename and uses sensible defaults.
 # Examples
     trc = make_trc("/path/to/mydata.jld2")
     trc = make_trc("/path/to/mydata.jld2"; seq_type=:rna, seed=42)
-    run_pipeline(trc)
+    run_method(trc)
 """
 function make_trc(datapath::String;
     seq_type::Symbol=:dna,
@@ -165,7 +165,7 @@ function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_
 end
 
 """
-    run_pipeline(trc; tune_max_epochs=15, tune_n_trials=2, tune_patience=10, output_indices=nothing)
+    run_method(trc; tune_max_epochs=15, tune_n_trials=2, tune_patience=10, output_indices=nothing)
 
 Run the full motif inference pipeline: load data, optionally tune, train, 
 and process all (or selected) output indices with HTML rendering.
@@ -176,7 +176,7 @@ and process all (or selected) output indices with HTML rendering.
 - `tune_patience=10`: early stopping patience
 - `output_indices=nothing`: which outputs to process (default: all if `trc.predict_position == :all`)
 """
-function run_pipeline(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing)
+function run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing)
     data = load_data(trc)
     tune_if_needed!(trc, data; tune_max_epochs, tune_n_trials, tune_patience)
 
@@ -234,40 +234,40 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 
 """
-    run_pipeline(dataset_entry; kwargs...)
+    run_method(dataset_entry; kwargs...)
 
 Run pipeline from a dataset entry (as returned by `load_datasets()`).
 
 # Examples
     ds = load_datasets("ecoli")
-    run_pipeline(ds[1])
-    run_pipeline(ds[1]; output_indices=1:5)
+    run_method(ds[1])
+    run_method(ds[1]; output_indices=1:5)
 """
-function run_pipeline(f::NamedTuple; kwargs...)
+function run_method(f::NamedTuple; kwargs...)
     trc = make_trc(f)
-    run_pipeline(trc; dataset_name=f.name, kwargs...)
+    run_method(trc; dataset_name=f.name, kwargs...)
 end
 
 """
-    run_pipeline(datapath; seq_type=:dna, seed=nothing, ...)
+    run_method(datapath; seq_type=:dna, seed=nothing, ...)
 
 Run pipeline directly from a .jld2 file path. 
 No pre-registration needed — just point to your data.
 
 All keyword arguments from `make_trc` (seq_type, normalization, seed, etc.) 
-and `run_pipeline` (output_indices, tune_* params) are accepted.
+and `run_method` (output_indices, tune_* params) are accepted.
 
 # Examples
     # Simplest — just a path (will auto-tune since no seed)
-    run_pipeline("/path/to/mydata.jld2")
+    run_method("/path/to/mydata.jld2")
 
     # With overrides
-    run_pipeline("/path/to/mydata.jld2"; seq_type=:rna, seed=42)
+    run_method("/path/to/mydata.jld2"; seq_type=:rna, seed=42)
 
     # RNA with specific outputs
-    run_pipeline("/path/to/mydata.jld2"; seq_type=:rna, seed=42, output_indices=1:5)
+    run_method("/path/to/mydata.jld2"; seq_type=:rna, seed=42, output_indices=1:5)
 """
-function run_pipeline(datapath::String;
+function run_method(datapath::String;
     # make_trc kwargs
     seq_type::Symbol=:dna,
     type::Symbol=:conv,
@@ -277,11 +277,11 @@ function run_pipeline(datapath::String;
     activation_thresh::Float64=0.9,
     multioutput::Bool=false,
     results_parent::String="../RESULTS",
-    # run_pipeline kwargs
+    # run_method kwargs
     kwargs...)
     trc = make_trc(datapath; seq_type, type, normalization_method, seed,
         motif_sizes, activation_thresh, multioutput, results_parent)
-    run_pipeline(trc; kwargs...)
+    run_method(trc; kwargs...)
 end
 
 """
@@ -297,7 +297,7 @@ Run pipeline for multiple datasets sequentially.
 function run_all(datasets; kwargs...)
     for (i, f) in enumerate(datasets)
         @info "═══ Dataset $i/$(length(datasets)): $(f.name) ═══"
-        run_pipeline(f; kwargs...)
+        run_method(f; kwargs...)
     end
 end
 
@@ -306,12 +306,12 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 
 # From a .jld2 file path (simplest):
-#   run_pipeline("/path/to/mydata.jld2")
-#   run_pipeline("/path/to/mydata.jld2"; seq_type=:rna, seed=42)
+#   run_method("/path/to/mydata.jld2")
+#   run_method("/path/to/mydata.jld2"; seq_type=:rna, seed=42)
 
 # From a registered dataset:
-#   run_pipeline(load_datasets("ecoli")[1])
-#   run_pipeline(load_datasets("ecoli")[1]; output_indices=1:5)
+#   run_method(load_datasets("ecoli")[1])
+#   run_method(load_datasets("ecoli")[1]; output_indices=1:5)
 
 # Batch:
 #   run_all(load_datasets("ecoli", "yeast"))

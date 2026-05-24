@@ -9,7 +9,7 @@
 # Usage:
 #   datasets = load_datasets()                    # all active datasets
 #   datasets = load_datasets("ecoli", "yeast")    # specific ones by name
-#   run_pipeline(datasets[1])                     # run one
+#   run_method(datasets[1])                     # run one
 #
 # To add a new dataset, just add an entry to DATASETS below.
 # ─────────────────────────────────────────────────────────────────────────────

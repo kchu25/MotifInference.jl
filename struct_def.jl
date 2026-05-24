@@ -40,7 +40,8 @@ function training_and_rendering_config(
     scale_back=true,
     motif_sizes=[2, 3],
     activation_thresh=0.8,
-    top_and_bot_counts=500, # temporary for now
+    top_and_bot_counts=8, # temporary for now
+    # top_and_bot_counts=500, # temporary for now
     count_threshold=25,
     Q_threshold=1e-25,
     dpi=60)
