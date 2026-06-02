@@ -1,4 +1,7 @@
+using MotifInference
 using Test
+
+using MotifInference: make_trc, load_data, tune_if_needed!
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -34,8 +37,8 @@ end
 
 @testset "pts / split_indices sanity checks" begin
 
-    # ── change these to point at a real dataset before running ───────────────
-    trc = make_trc("/path/to/your/data.jld2"; seed=42)
+    # ── dataset path comes from the MOTIFINFERENCE_TEST_DATA env var ──────────
+    trc = make_trc(ENV["MOTIFINFERENCE_TEST_DATA"]; seed=42)
     # ─────────────────────────────────────────────────────────────────────────
 
     art = collect_test_artifacts(trc; output_index=1)
