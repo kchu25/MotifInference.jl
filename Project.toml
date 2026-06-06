@@ -20,13 +20,22 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
-[sources]
-BanzhafInference = { path = "/home/kchu25/Desktop/work/code/cur_proj/BanzhafInference" }
-GlyphEctoplasm = { path = "/home/kchu25/Desktop/work/code/cur_proj/GlyphEctoplasm.jl" }
-AutoComputationalGraphTuning = { path = "/home/kchu25/Desktop/work/code/cur_proj/AutoComputationalGraphTuning" }
-SEQ2EXPdata = { path = "/home/kchu25/Desktop/work/code/dev/SEQ2EXPdata.jl" }
-
 [compat]
+Arrow = "2.8.1"
+AutoComputationalGraphTuning = "0.1.2"
+BanzhafInference = "0.0.1"
+CUDA = "5.9.7"
+CairoMakie = "0.15.11"
+ChainRulesCore = "1.26.1"
+Flux = "0.16.10"
+GlyphEctoplasm = "0.2.3"
+JLD2 = "0.6.4"
+Random = "1"
+SEQ2EXPdata = "1.0.8"
+Statistics = "1"
+StatsBase = "0.34.11"
+Zygote = "0.7.10"
+cuDNN = "1.4.6"
 julia = "1.11, 1.12"
 
 [extras]
