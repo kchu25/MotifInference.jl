@@ -123,8 +123,7 @@ struct SeqCNN
         # Create model and report parameter count
         model = new(hp, pwms, conv_layers, mbconv_blocks, output_weights, final_nonlinearity, Ref(true))
         @info "Model created with $(count_parameters(model)) trainable parameters"
-        
-        return model
+
         return model
     end
     
