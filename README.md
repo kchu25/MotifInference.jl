@@ -10,7 +10,7 @@ weights.
 
 The pipeline has three stages:
 
-1. **Model** — `SeqCNN`, a sequence-to-expression network with:
+1. **Model** — a sequence-to-expression network with:
    - a base layer of **learnable PWMs** (position weight matrices) for primary
      motif detection,
    - a stack of hierarchical convolutional layers (optional LayerNorm,
@@ -64,6 +64,61 @@ run_method("/path/to/mydata.jld2"; seq_type=:rna, seed=42)
 run_method("/path/to/mydata.jld2"; seq_type=:rna, seed=42, output_indices=1:5)
 ```
 
+### Run without a `.jld2` file
+
+You don't need to pre-build a `.jld2` on disk. You can hand `run_method` your
+data directly — either in memory or as a small CSV. Internally these construct a
+`SEQ2EXP_Dataset` (and its one-hot encoding) for you, then run the exact same
+pipeline as the `.jld2` path.
+
+**From in-memory strings + labels:**
+
+```julia
+using MotifInference
+
+strings = ["ACGTACGT", "TTGGCCAA", "GGGGCCCC", "AAAATTTT"]
+labels  = [1.0, 2.0, 3.0, 4.0]        # one scalar per sequence (Float)
+
+# nucleotides
+run_method(strings, labels)
+run_method(strings, labels; seq_type=:rna, seed=42)
+
+# amino acids for mutagenesis (compute a consensus, use the mutation model)
+run_method(aa_strings, aa_labels; seq_type=:protein, type=:mut, GET_CONSENSUS=true)
+```
+
+**From a CSV** of `<sequence>, <scalar-label>` (one row per sequence). A header
+row is auto-detected and skipped; blank lines are ignored:
+
+```csv
+sequence,label
+ACGTACGT,1.5
+TTGGCCAA,2.0
+GGGGCCCC,-0.5
+```
+
+```julia
+# Extension-dispatched: a `.csv` path is parsed in memory, anything else is a .jld2
+run_method("/path/to/mydata.csv")
+run_method("/path/to/mydata.csv"; seq_type=:rna, seed=42)
+```
+
+The results folder is named after the CSV file (or `"inmemory"` for the
+strings/labels form); override with `save_folder_name`.
+
+A few notes on what is and isn't validated (handled by `SEQ2EXPdata`, so the
+pipeline doesn't re-check):
+
+- **Counts must match** — a mismatch between number of sequences and labels
+  throws an `ArgumentError`.
+- **Equal length is not required** — varying-length sequences are padded to the
+  max length (`pad_dir=:right` by default) before one-hot encoding.
+- **Labels** are scalar (one per sequence) for now; vector/multi-output targets
+  via these entry points are a planned extension.
+- **Alphabet is not strictly enforced** — unknown characters (anything outside
+  `A/C/G/T/U/N` for nucleotides, or the 20 amino acids) are encoded as all-zero
+  columns rather than raising. Clean your sequences if that matters for you.
+
 Build a run configuration explicitly if you want to inspect or reuse it:
 
 ```julia
@@ -108,9 +163,10 @@ src/
   datasets.jl                # registered dataset definitions
   dataset_utils.jl
   plotting.jl
-  VeryBasicCNN2/             # the SeqCNN model (PWM + conv + MBConv backbone)
+  VeryBasicCNN2/             # the model (PWM + conv + MBConv backbone)
 test/
   runtests.jl                # smoke tests (loads package, checks exports)
+  csv_and_inmemory_tests.jl  # CPU-only: CSV parsing + dataset construction (no training)
   integration_tests.jl       # data-dependent; requires MOTIFINFERENCE_TEST_DATA
 ```
 
@@ -119,6 +175,9 @@ test/
 ```julia
 using Pkg; Pkg.test()
 ```
+
+The default suite is CPU-only and needs no data — it covers package loading,
+CSV parsing, and dataset construction for the in-memory / CSV entry points.
 
 The integration tests need a real dataset and a GPU. Enable them by pointing
 `MOTIFINFERENCE_TEST_DATA` at a `.jld2` file:

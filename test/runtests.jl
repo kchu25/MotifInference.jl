@@ -10,6 +10,9 @@ using Test
         @test isdefined(MotifInference, :DATASETS_DEBUG)
     end
 
+    # CPU-only tests for the CSV / in-memory entry points (no training, no GPU).
+    include("csv_and_inmemory_tests.jl")
+
     # The integration tests require a real .jld2 dataset on disk and a GPU.
     # Point MOTIFINFERENCE_TEST_DATA at a dataset to run them:
     #     MOTIFINFERENCE_TEST_DATA=/path/to/data.jld2 julia --project -e 'using Pkg; Pkg.test()'

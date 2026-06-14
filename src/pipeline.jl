@@ -184,6 +184,18 @@ and process all (or selected) output indices with HTML rendering.
 """
 function run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing)
     data = load_data(trc)
+    run_method(trc, data; tune_max_epochs, tune_n_trials, tune_patience,
+        output_indices, sensitivity_analysis, dataset_name)
+end
+
+"""
+    run_method(trc, data; ...)
+
+Run the pipeline with an already-loaded `data` (a `OnehotSEQ2EXP_Dataset`),
+bypassing `load_data`. Used by the in-memory `run_method(strings, labels; ...)`
+entry point so no .jld2 file is required.
+"""
+function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing)
     tune_if_needed!(trc, data; tune_max_epochs, tune_n_trials, tune_patience)
 
     m, train_stats, dl_train_eval, dl_test_eval, split_indices =
@@ -258,20 +270,58 @@ function run_method(f::NamedTuple;
 end
 
 """
+    read_seq_label_csv(path) -> (strings, labels)
+
+Parse a two-column CSV of `<sequence>, <scalar-label>` into a `Vector{String}`
+of sequences and a `Vector{Float64}` of labels. A header row is auto-detected
+(and skipped) when the second field of the first line is not a number. Blank
+lines are ignored. No external CSV dependency is used — the format is trivial.
+"""
+function read_seq_label_csv(path::String)
+    isfile(path) || throw(ArgumentError("CSV file not found: $path"))
+    strings = String[]
+    labels = Float64[]
+    for (lineno, raw) in enumerate(readlines(path))
+        line = strip(raw)
+        isempty(line) && continue
+        parts = split(line, ',')
+        length(parts) ≥ 2 ||
+            throw(ArgumentError("Line $lineno of $path is not `<sequence>, <label>`: \"$line\""))
+        seq = String(strip(parts[1]))
+        lab = tryparse(Float64, strip(parts[2]))
+        if isnothing(lab)
+            # first line with a non-numeric label is treated as a header; otherwise it's an error
+            (lineno == 1 && isempty(strings)) && continue
+            throw(ArgumentError("Line $lineno of $path has a non-numeric label: \"$(parts[2])\""))
+        end
+        push!(strings, seq)
+        push!(labels, lab)
+    end
+    isempty(strings) && throw(ArgumentError("No (sequence, label) rows parsed from $path"))
+    return strings, labels
+end
+
+"""
     run_method(datapath; seq_type=:dna, seed=nothing, ...)
 
-Run pipeline directly from a .jld2 file path. 
+Run pipeline directly from a file path. The format is chosen by extension:
+- `.csv` — a two-column `<sequence>, <scalar-label>` file (parsed in memory; no
+  .jld2 needed). A header row is auto-detected. Currently scalar labels only.
+- anything else — a `.jld2` file containing a `SEQ2EXP_Dataset` as `raw_data`.
+
 No pre-registration needed — just point to your data.
 
-All keyword arguments from `make_trc` (seq_type, normalization, seed, etc.) 
+All keyword arguments from `make_trc` (seq_type, normalization, seed, etc.)
 and `run_method` (output_indices, tune_* params) are accepted.
 
 # Examples
     # Simplest — just a path (will auto-tune since no seed)
     run_method("/path/to/mydata.jld2")
+    run_method("/path/to/mydata.csv")
 
     # With overrides
     run_method("/path/to/mydata.jld2"; seq_type=:rna, seed=42)
+    run_method("/path/to/mydata.csv"; seq_type=:protein, type=:mut, GET_CONSENSUS=true)
 
     # RNA with specific outputs
     run_method("/path/to/mydata.jld2"; seq_type=:rna, seed=42, output_indices=1:5)
@@ -289,9 +339,69 @@ function run_method(datapath::String;
     save_folder_name::Union{String,Nothing}=nothing,
     # run_method kwargs
     kwargs...)
+    if endswith(lowercase(datapath), ".csv")
+        strings, labels = read_seq_label_csv(datapath)
+        return run_method(strings, labels;
+            seq_type, type, normalization_method, seed, motif_sizes,
+            activation_thresh, multioutput, save_root, save_folder_name,
+            name=splitext(basename(datapath))[1], kwargs...)
+    end
     trc = make_trc(datapath; seq_type, type, normalization_method, seed,
         motif_sizes, activation_thresh, multioutput, save_root, save_folder_name)
     run_method(trc; kwargs...)
+end
+
+"""
+    run_method(strings, labels; feature_names=nothing, GET_CONSENSUS=false, ...)
+
+Run the pipeline directly from in-memory `strings` and `labels`, with no .jld2
+file on disk. A `SEQ2EXP_Dataset` is constructed internally (equivalent to
+`SEQ2EXP_Dataset(strings, labels; ...)`), so this is the in-memory counterpart
+to `run_method(datapath::String; ...)`.
+
+All keyword arguments from `make_trc`/`run_method` are accepted, plus:
+- `feature_names = nothing`: column names for multi-output `labels`
+- `GET_CONSENSUS = false`: compute a consensus sequence (e.g. amino-acid mutagenesis)
+- `name = "inmemory"`: used for the results folder when `save_folder_name` is unset
+
+# Examples
+    # nucleotides
+    run_method(strings, labels)
+    run_method(strings, labels; seq_type=:rna, seed=42, output_indices=1:5)
+
+    # amino acids for mutagenesis
+    run_method(strings, labels; GET_CONSENSUS=true, seq_type=:protein, type=:mut)
+"""
+function run_method(strings::Vector{String}, labels::Union{AbstractVector,AbstractMatrix};
+    feature_names::Union{Vector{String},Nothing}=nothing,
+    GET_CONSENSUS::Bool=false,
+    # make_trc kwargs
+    seq_type::Symbol=:dna,
+    type::Symbol=:conv,
+    normalization_method::Symbol=:zscore,
+    seed::Union{Int,Nothing}=nothing,
+    motif_sizes::Vector{Int}=[2, 3, 4, 5],
+    activation_thresh::Float64=0.9,
+    multioutput::Bool=false,
+    save_root::String=".",
+    save_folder_name::Union{String,Nothing}=nothing,
+    name::String="inmemory",
+    # run_method kwargs
+    kwargs...)
+
+    raw_data = SEQ2EXP_Dataset(strings, labels, feature_names; GET_CONSENSUS)
+    data = MotifInference.OnehotSEQ2EXP_Dataset(raw_data)
+
+    folder = something(save_folder_name, name)
+    save_path = setup_results_folder(folder; save_root)
+    model_creator = resolve_model_creator(; seq_type, type, multioutput)
+
+    # datapath is unused here (data is already in memory), so pass an empty placeholder
+    trc = MotifInference.training_and_rendering_config(
+        "", model_creator, save_path, "n/a";
+        seq_type, seed, type, motif_sizes, normalization_method, activation_thresh)
+
+    run_method(trc, data; kwargs...)
 end
 
 """
