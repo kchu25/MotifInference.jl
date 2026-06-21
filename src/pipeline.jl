@@ -160,14 +160,29 @@ end
 Generate the HTML motif visualization pages.
 """
 function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis=false, dataset_name=nothing)
-    MotifInference.GlyphEctoplasm.plot_motifs_conv_case(data, m, trc.motif_sizes, contributions_df_filtered, dfs, pts_all, pts_test, all_indices; interaction_summaries=interaction_summaries_str,
-        dpi=trc.dpi,
-        save_path=joinpath(trc.save_path, render_folder_name),        
-        page_title=trc.title_string,
-        rna=trc.seq_type == :rna,
-        sensitivity_analysis=sensitivity_analysis,        
-        dataset_name=dataset_name
-        )
+    save_path = joinpath(trc.save_path, render_folder_name)
+
+    if trc.type == :mut
+        MotifInference.GlyphEctoplasm.plot_motifs_mut_case(data, m, contributions_df_filtered, dfs;
+            pts=pts_all,
+            pts_test=pts_test,
+            all_indices,
+            interaction_summaries=interaction_summaries_str,
+            dpi=trc.dpi,
+            save_path=save_path,
+            page_title=trc.title_string,
+            use_rna=trc.seq_type == :rna,
+            )
+    else
+        MotifInference.GlyphEctoplasm.plot_motifs_conv_case(data, m, trc.motif_sizes, contributions_df_filtered, dfs, pts_all, pts_test, all_indices; interaction_summaries=interaction_summaries_str,
+            dpi=trc.dpi,
+            save_path=save_path,
+            page_title=trc.title_string,
+            rna=trc.seq_type == :rna,
+            sensitivity_analysis=sensitivity_analysis,
+            dataset_name=dataset_name
+            )
+    end
 end
 
 """
