@@ -168,6 +168,7 @@ function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_
             pts_test=pts_test,
             all_indices,
             interaction_summaries=interaction_summaries_str,
+            reduction_on_ref=true,
             dpi=trc.dpi,
             save_path=save_path,
             page_title=trc.title_string,
