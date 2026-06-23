@@ -17,7 +17,8 @@ Automatically select the correct model constructor based on sequence type and ou
 function resolve_model_creator(; seq_type::Symbol, type::Symbol, multioutput::Bool=false)
     if seq_type == :protein
         if type == :mut
-            return VeryBasicCNN2.create_model_aminoacids_fixed_pool_stride
+            # return VeryBasicCNN2.create_model_aminoacids_fixed_pool_stride
+            return VeryBasicCNN2.create_model_aminoacids_fixed_pool_stride_w_bottleneck
         end
     else  # :dna or :rna
         if multioutput
