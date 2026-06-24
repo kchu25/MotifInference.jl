@@ -159,7 +159,7 @@ end
 
 Generate the HTML motif visualization pages.
 """
-function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis=false, dataset_name=nothing)
+function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing)
     save_path = joinpath(trc.save_path, render_folder_name)
 
     if trc.type == :mut
@@ -172,6 +172,7 @@ function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_
             dpi=trc.dpi,
             save_path=save_path,
             page_title=trc.title_string,
+            protein_name=protein_name,
             use_rna=trc.seq_type == :rna,
             )
     else
@@ -198,10 +199,10 @@ and process all (or selected) output indices with HTML rendering.
 - `tune_patience=10`: early stopping patience
 - `output_indices=nothing`: which outputs to process (default: all if `trc.predict_position == :all`)
 """
-function run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing)
+function run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing)
     data = load_data(trc)
     run_method(trc, data; tune_max_epochs, tune_n_trials, tune_patience,
-        output_indices, sensitivity_analysis, dataset_name)
+        output_indices, sensitivity_analysis, dataset_name, protein_name)
 end
 
 """
@@ -211,7 +212,7 @@ Run the pipeline with an already-loaded `data` (a `OnehotSEQ2EXP_Dataset`),
 bypassing `load_data`. Used by the in-memory `run_method(strings, labels; ...)`
 entry point so no .jld2 file is required.
 """
-function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing)
+function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing)
     tune_if_needed!(trc, data; tune_max_epochs, tune_n_trials, tune_patience)
 
     m, train_stats, dl_train_eval, dl_test_eval, split_indices =
@@ -257,7 +258,7 @@ function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patien
             @info "All dataframes are empty; cleared motif_sizes and dfs"
         end
 
-        render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis, dataset_name)
+        render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis, dataset_name, protein_name)
 
         @info "Output $output_index done → $(render_folder_name)"
     end
