@@ -34,7 +34,7 @@ function training_and_rendering_config(
     normalization_method=:zscore,    
     loss_spec=loss_specs[:mse],
     max_training_epochs=40,
-    max_processor_epochs=30,
+    max_processor_epochs=60,
     predict_position=:all,
     patience=10,
     scale_back=true,
