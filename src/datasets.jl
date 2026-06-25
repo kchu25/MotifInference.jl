@@ -19,7 +19,6 @@ const DATASETS = [
     dataset(name="splirent", file="splirent.jld2", seed=6, multioutput=true, 
     model_creator=VeryBasicCNN2.
     create_model_nucleotides_fixed_pool_stride_multioutputs_sigmoid, seq_type=:rna, motif_sizes=[2,3,4,5], normalization_method=:identity, loss_spec = loss_specs[:binary_cross_entropy]),
-
 ]
 
 const DATASETS_MUT = [
