@@ -18,7 +18,7 @@ const datasets_processed_folder = "/home/kchu25/Desktop/work/code/cur_proj/DATAS
 Construct a training_and_rendering_config from a dataset entry (NamedTuple).
 `save_folder_name` defaults to `f.name`.
 """
-function make_trc(f;
+function make_trc(f::NamedTuple;
     datasets_folder=datasets_processed_folder,
     save_root=".",
     save_folder_name=nothing)
