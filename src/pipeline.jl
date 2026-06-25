@@ -18,8 +18,7 @@ const datasets_processed_folder = "/home/kchu25/Desktop/work/code/cur_proj/DATAS
 Construct a training_and_rendering_config from a dataset entry (NamedTuple).
 `save_folder_name` defaults to `f.name`.
 """
-function make_trc(f::NamedTuple;
-    datasets_folder=datasets_processed_folder,
+function make_trc(f::NamedTuple, datasets_folder=datasets_processed_folder;
     save_root=".",
     save_folder_name=nothing)
     datapath = joinpath(datasets_folder, f.name, f.file)
@@ -278,11 +277,11 @@ Run pipeline from a dataset entry (as returned by `load_datasets()`).
     run_method(ds[1])
     run_method(ds[1]; output_indices=1:5)
 """
-function run_method(f::NamedTuple;
+function run_method(f::NamedTuple,  datasets_parent_folder=datasets_processed_folder;
     save_root=".",
     save_folder_name=nothing,
     kwargs...)
-    trc = make_trc(f; save_root, save_folder_name)
+    trc = make_trc(f, datasets_parent_folder; save_root, save_folder_name)
     run_method(trc; dataset_name=f.name, kwargs...)
 end
 
@@ -431,10 +430,10 @@ Run pipeline for multiple datasets sequentially.
     run_all(load_datasets("ecoli", "yeast"))              # specific ones
     run_all(load_datasets(); output_indices=1:3)          # first 3 outputs each
 """
-function run_all(datasets; kwargs...)
+function run_all(datasets, datasets_parent_folder=datasets_processed_folder; kwargs...)
     for (i, f) in enumerate(datasets)
         @info "═══ Dataset $i/$(length(datasets)): $(f.name) ═══"
-        run_method(f; kwargs...)
+        run_method(f, datasets_parent_folder; kwargs...)
     end
 end
 
