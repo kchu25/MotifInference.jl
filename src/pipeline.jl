@@ -10,7 +10,7 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 
 # const datasets_processed_folder = "/home/shane/Desktop/academia/data/SEQ2EXP/DATASETS_PROCESSED"
-const datasets_processed_folder = "//home/kchu25/Desktop/work/code/cur_proj/DATASETS_PROCESSED"
+const datasets_processed_folder = "/home/kchu25/Desktop/work/code/cur_proj/DATASETS_PROCESSED"
 
 """
     make_trc(f; datasets_folder=datasets_processed_folder, save_root=".", save_folder_name=nothing)
