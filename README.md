@@ -6,8 +6,7 @@ Discover functional motif combinations from sequence-to-measurement data (DNA / 
 
 ```julia
 using Pkg
-Pkg.activate(".")
-Pkg.instantiate()
+Pkg.add("MotifInference")
 ```
 
 A CUDA-capable GPU is required for training.
