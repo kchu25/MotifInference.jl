@@ -87,7 +87,7 @@ function load_or_save_raw_motifs(data, m, processor, train_stats, trc; output_in
             obtain_motifs(data, m, processor, train_stats, trc; 
                 predict_position=output_index)
         
-        println("Saving motifs cache to: $cache_file")
+        @debug "Saving motifs cache to: $cache_file"
         @save cache_file contributions_df_filtered contributions_df_filtered_singletons dfs
     end
 

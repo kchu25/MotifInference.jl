@@ -91,13 +91,13 @@ struct SeqCNN
         # Report LayerNorm usage
         if hp.use_layernorm
             ln_count = sum(i > hp.inference_code_layer for i in 1:num_layers(hp))
-            @info "Using LayerNorm for $ln_count conv layers (layers > $(hp.inference_code_layer))"
+            @debug "Using LayerNorm for $ln_count conv layers (layers > $(hp.inference_code_layer))"
         end
 
         # Optional MBConv blocks (EfficientNet-style refinement)
         mbconv_blocks = MBConvBlock[]
         if hp.num_mbconv > 0
-            @info "Using MBConv refinement: $(hp.num_mbconv) blocks with $(hp.mbconv_expansion)x expansion (EfficientNet-style)"
+            @debug "Using MBConv refinement: $(hp.num_mbconv) blocks with $(hp.mbconv_expansion)x expansion (EfficientNet-style)"
             final_channels = hp.num_img_filters[end]
             for _ in 1:hp.num_mbconv
                 push!(mbconv_blocks, MBConvBlock(;
@@ -122,7 +122,7 @@ struct SeqCNN
         end
         # Create model and report parameter count
         model = new(hp, pwms, conv_layers, mbconv_blocks, output_weights, final_nonlinearity, Ref(true))
-        @info "Model created with $(count_parameters(model)) trainable parameters"
+        @debug "Model created with $(count_parameters(model)) trainable parameters"
 
         return model
     end

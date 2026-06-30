@@ -1,7 +1,7 @@
 name = "MotifInference"
 uuid = "e1c1f7b9-3d4a-4d3e-9b6a-2f5c8d1a7b34"
 authors = ["Shane Kuei-Hsien Chu (skchu@wustl.edu)"]
-version = "0.0.6"
+version = "0.0.7"
 
 [deps]
 Arrow = "69666777-d1a9-59fb-9406-91d4454c9d45"
@@ -22,8 +22,8 @@ cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
 [compat]
 Arrow = "2.8.1"
-AutoComputationalGraphTuning = "0.1.2"
-BanzhafInference = "0.0.3"
+AutoComputationalGraphTuning = "0.1.3"
+BanzhafInference = "0.0.5"
 CUDA = "5.9.7"
 CairoMakie = "0.15.11"
 ChainRulesCore = "1.26.1"

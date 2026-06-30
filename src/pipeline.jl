@@ -249,12 +249,12 @@ function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patien
         if last_nonempty_idx > 0
             trc.motif_sizes = trc.motif_sizes[1:last_nonempty_idx]
             dfs = dfs[1:last_nonempty_idx]
-            @info "Updated motif sizes to $(trc.motif_sizes) and trimmed dfs based on non-empty dataframes"
+            @debug "Updated motif sizes to $(trc.motif_sizes) and trimmed dfs based on non-empty dataframes"
         else
             # all dataframes are empty
             trc.motif_sizes = Int[]
             dfs = []
-            @info "All dataframes are empty; cleared motif_sizes and dfs"
+            @warn "No motifs found for output $output_index"
         end
 
         render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis, dataset_name, protein_name)
