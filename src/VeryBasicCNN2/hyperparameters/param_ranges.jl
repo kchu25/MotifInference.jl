@@ -108,6 +108,19 @@ nucleotide_ranges_fixed_pool_stride_multioutputs(; kwargs...) = HyperParamRanges
     kwargs...
 )
 
+# Bottleneck variants — squeeze the inference-code layer (filters → BOTTLENECK_FILTERS,
+# filter height → 25), the same mechanism the amino-acid bottleneck uses. The bottleneck
+# writes filters[infer_layer]/heights[infer_layer] where infer_layer = num_no_pool_layers
+# (because infer_base_layer_code=false), so it needs num_no_pool_layers ≥ 1 to be a valid
+# 1-based index — hence the override below (the only difference from the non-bottleneck
+# presets). NOTE: the height-25 filter spans ~25 input positions, so sequences should be
+# ≳ 25nt; shorter reads yield an invalid embedding length (guarded in `create_model`).
+nucleotide_ranges_fixed_pool_stride_bottleneck(; kwargs...) =
+    nucleotide_ranges_fixed_pool_stride(; num_no_pool_layers = 1, kwargs...)
+
+nucleotide_ranges_fixed_pool_stride_multioutputs_bottleneck(; kwargs...) =
+    nucleotide_ranges_fixed_pool_stride_multioutputs(; num_no_pool_layers = 1, kwargs...)
+
 amino_acid_ranges_fixed_pool_stride(; kwargs...) = HyperParamRanges(;
     # num_img_layers_range = 3:4,
     # pfm_length_range = 3:2:5,

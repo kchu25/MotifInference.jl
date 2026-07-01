@@ -47,6 +47,8 @@ Infers the dataset name from the filename and uses sensible defaults.
 - `motif_sizes = [2, 3, 4, 5]`
 - `activation_thresh = 0.9`
 - `multioutput = false`
+- `conv_bottleneck = false` (DNA/RNA only: squeeze the inference-code conv layer, like
+  the amino-acid bottleneck model; needs sequences ≳ 25nt)
 - `save_root = "."` (current working directory)
 - `save_folder_name = nothing` (defaults to the file's basename without extension)
 
@@ -64,12 +66,13 @@ function make_trc(datapath::String;
     motif_sizes::Vector{Int}=[2, 3, 4, 5],
     activation_thresh::Float64=0.9,
     multioutput::Bool=false,
+    conv_bottleneck::Bool=false,
     save_root::String=".",
     save_folder_name::Union{String,Nothing}=nothing)
 
     name = something(save_folder_name, splitext(basename(datapath))[1])
     save_path = setup_results_folder(name; save_root)
-    model_creator = resolve_model_creator(; seq_type, type, multioutput)
+    model_creator = resolve_model_creator(; seq_type, type, multioutput, conv_bottleneck)
 
     MotifInference.training_and_rendering_config(
         datapath, model_creator, save_path, "n/a";
@@ -352,6 +355,7 @@ function run_method(datapath::String;
     motif_sizes::Vector{Int}=[2, 3, 4, 5],
     activation_thresh::Float64=0.9,
     multioutput::Bool=false,
+    conv_bottleneck::Bool=false,
     save_root::String=".",
     save_folder_name::Union{String,Nothing}=nothing,
     # run_method kwargs
@@ -360,11 +364,11 @@ function run_method(datapath::String;
         strings, labels = read_seq_label_csv(datapath)
         return run_method(strings, labels;
             seq_type, type, normalization_method, seed, motif_sizes,
-            activation_thresh, multioutput, save_root, save_folder_name,
+            activation_thresh, multioutput, conv_bottleneck, save_root, save_folder_name,
             name=splitext(basename(datapath))[1], kwargs...)
     end
     trc = make_trc(datapath; seq_type, type, normalization_method, seed,
-        motif_sizes, activation_thresh, multioutput, save_root, save_folder_name)
+        motif_sizes, activation_thresh, multioutput, conv_bottleneck, save_root, save_folder_name)
     run_method(trc; kwargs...)
 end
 
@@ -400,6 +404,7 @@ function run_method(strings::Vector{String}, labels::Union{AbstractVector,Abstra
     motif_sizes::Vector{Int}=[2, 3, 4, 5],
     activation_thresh::Float64=0.9,
     multioutput::Bool=false,
+    conv_bottleneck::Bool=false,
     save_root::String=".",
     save_folder_name::Union{String,Nothing}=nothing,
     name::String="inmemory",
@@ -411,7 +416,7 @@ function run_method(strings::Vector{String}, labels::Union{AbstractVector,Abstra
 
     folder = something(save_folder_name, name)
     save_path = setup_results_folder(folder; save_root)
-    model_creator = resolve_model_creator(; seq_type, type, multioutput)
+    model_creator = resolve_model_creator(; seq_type, type, multioutput, conv_bottleneck)
 
     # datapath is unused here (data is already in memory), so pass an empty placeholder
     trc = MotifInference.training_and_rendering_config(

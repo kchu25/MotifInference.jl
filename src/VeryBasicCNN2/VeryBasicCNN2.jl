@@ -54,6 +54,8 @@ export create_model
 # Backward-compatible convenience names (thin wrappers)
 export create_model_nucleotides, create_model_nucleotides_simple
 export create_model_nucleotides_fixed_pool_stride
+export create_model_nucleotides_fixed_pool_stride_bottleneck
+export create_model_nucleotides_fixed_pool_stride_multioutputs_bottleneck
 export create_model_aminoacids, create_model_aminoacids_fixed_pool_stride
 
 # Forward pass functions

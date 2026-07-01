@@ -4,17 +4,21 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 """
-    resolve_model_creator(; seq_type, type, multioutput)
+    resolve_model_creator(; seq_type, type, multioutput, conv_bottleneck)
 
 Automatically select the correct model constructor based on sequence type and output mode.
 
 # Logic
 - Protein + mutation → bottleneck model
 - Protein otherwise  → standard aminoacid model
-- DNA/RNA + multioutput → multioutput nucleotide model
-- DNA/RNA otherwise    → standard nucleotide model
+- DNA/RNA + multioutput → multioutput nucleotide model (bottleneck variant if `conv_bottleneck`)
+- DNA/RNA otherwise    → standard nucleotide model (bottleneck variant if `conv_bottleneck`)
+
+`conv_bottleneck` only affects the DNA/RNA paths; protein mutation already uses a
+bottleneck model.
 """
-function resolve_model_creator(; seq_type::Symbol, type::Symbol, multioutput::Bool=false)
+function resolve_model_creator(; seq_type::Symbol, type::Symbol, multioutput::Bool=false,
+                               conv_bottleneck::Bool=false)
     if seq_type == :protein
         if type == :mut
             # return VeryBasicCNN2.create_model_aminoacids_fixed_pool_stride
@@ -22,9 +26,13 @@ function resolve_model_creator(; seq_type::Symbol, type::Symbol, multioutput::Bo
         end
     else  # :dna or :rna
         if multioutput
-            return VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_multioutputs
+            return conv_bottleneck ?
+                VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_multioutputs_bottleneck :
+                VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_multioutputs
         else
-            return VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride
+            return conv_bottleneck ?
+                VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_bottleneck :
+                VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride
         end
     end
 end
@@ -69,11 +77,12 @@ function dataset(;
         motif_sizes::Vector{Int} = [2,3,4,5],
         activation_thresh::Float64 = 0.95,
         multioutput::Bool = false,
+        conv_bottleneck::Bool = false,
         loss_spec = loss_specs[:mse],
         model_creator = nothing
     )
     if isnothing(model_creator)
-        model_creator = resolve_model_creator(; seq_type, type, multioutput)
+        model_creator = resolve_model_creator(; seq_type, type, multioutput, conv_bottleneck)
     end
     return (;
         name, file, model_creator, normalization_method, 

@@ -542,6 +542,20 @@ create_model_nucleotides_fixed_pool_stride_multioutputs(args...; kw...) =
 create_model_nucleotides_fixed_pool_stride_multioutputs_tanh(args...; kw...) =
     create_model(Nucleotides(), FixedPoolStride(), Multioutputs(), UseTanh(), args...; kw...)
 
+# Bottleneck variants (squeeze the inference-code layer, like
+# `create_model_aminoacids_fixed_pool_stride_w_bottleneck`). These intentionally bypass
+# the tag combinator: the `Bottleneck()` tag is stripped before `model_ranges` dispatch,
+# so the tag path would pair `bottleneck=true` with the non-bottleneck nucleotide ranges
+# (num_no_pool_layers=0 → infer_layer=0 → out-of-bounds). Instead we pass the dedicated
+# bottleneck ranges (num_no_pool_layers=1) together with `bottleneck=true` explicitly.
+create_model_nucleotides_fixed_pool_stride_bottleneck(args...; kw...) =
+    create_model(args...; ranges = nucleotide_ranges_fixed_pool_stride_bottleneck(),
+                 bottleneck = true, kw...)
+
+create_model_nucleotides_fixed_pool_stride_multioutputs_bottleneck(args...; kw...) =
+    create_model(args...; ranges = nucleotide_ranges_fixed_pool_stride_multioutputs_bottleneck(),
+                 bottleneck = true, kw...)
+
 create_model_aminoacids_tanh(args...; kw...) =
     create_model(AminoAcids(), UseTanh(), args...; kw...)
 
