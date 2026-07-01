@@ -53,11 +53,16 @@ function generate_random_hyperparameters(;
     batch = isnothing(batch_size) ? rand(rng, ranges.batch_size_options) : batch_size
     infer_layer = ranges.infer_base_layer_code ? 0 : ranges.num_no_pool_layers
     
-    # Apply bottleneck if specified
+    # Apply bottleneck if specified. The squeeze layer defaults to the inference-code
+    # layer (legacy behavior) but can be decoupled via ranges.bottleneck_layer > 0 so the
+    # interpreted layer keeps its full filters (nucleotide case). Clamp to 1:(n_layers-1)
+    # so filters[bl] and widths[bl+1] stay in bounds.
     if bottleneck
-        filters[infer_layer] = bottleneck_filters;
-        heights[infer_layer] = 25;
-        widths[infer_layer+1] = bottleneck_filters;
+        bl = ranges.bottleneck_layer > 0 ? ranges.bottleneck_layer : infer_layer
+        bl = clamp(bl, 1, n_layers - 1)
+        filters[bl] = bottleneck_filters;
+        heights[bl] = 25;
+        widths[bl+1] = bottleneck_filters;
     end
 
     # MBConv configuration

@@ -22,7 +22,14 @@ Base.@kwdef struct HyperParamRanges
     base_stride::Int = 1
     softmax_alpha = SOFTMAX_ALPHA
     infer_base_layer_code::Bool = true
-    
+
+    # Conv layer that the bottleneck squeeze is applied to (filters→BOTTLENECK_FILTERS,
+    # height→25). 0 = use the inference-code layer (legacy behavior, e.g. amino-acid
+    # bottleneck squeezes its inference layer). Set >0 to decouple the squeeze from the
+    # interpreted layer — used by nucleotides so the interpreted base/first layer keeps
+    # its full motif filters and the squeeze sits at a deeper conv layer instead.
+    bottleneck_layer::Int = 0
+
     # MBConv options (default: disabled, use with_mbconv to enable)
     num_mbconv_range = 0:0
     mbconv_expansion_options = [4]
@@ -108,18 +115,25 @@ nucleotide_ranges_fixed_pool_stride_multioutputs(; kwargs...) = HyperParamRanges
     kwargs...
 )
 
-# Bottleneck variants — squeeze the inference-code layer (filters → BOTTLENECK_FILTERS,
-# filter height → 25), the same mechanism the amino-acid bottleneck uses. The bottleneck
-# writes filters[infer_layer]/heights[infer_layer] where infer_layer = num_no_pool_layers
-# (because infer_base_layer_code=false), so it needs num_no_pool_layers ≥ 1 to be a valid
-# 1-based index — hence the override below (the only difference from the non-bottleneck
-# presets). NOTE: the height-25 filter spans ~25 input positions, so sequences should be
-# ≳ 25nt; shorter reads yield an invalid embedding length (guarded in `create_model`).
+# Bottleneck variants — squeeze the SECOND conv layer (filters → BOTTLENECK_FILTERS,
+# filter height → 25) while leaving interpretation on the base PWM/motif layer, so the
+# interpreted first layer keeps its full motif filters. Two overrides vs the non-bottleneck
+# preset:
+#   • infer_base_layer_code = true  → inference_code_layer = 0 (motifs still read from the
+#     base PWM layer, exactly like the non-bottleneck nucleotide model).
+#   • num_no_pool_layers = 2        → no pooling through the bottleneck layer, so the
+#     height-25 filter doesn't collapse the (already downsampled) sequence — mirrors the
+#     amino-acid bottleneck, whose squeeze layer also has no pooling.
+# `bottleneck_layer = 2` is clamped to 1:(num_img_layers-1), always valid for the 3:4-layer
+# range. NOTE: the height-25 filter spans ~25 input positions, so sequences should be
+# ≳ 30nt; shorter reads yield an invalid architecture (create_model returns `nothing`).
 nucleotide_ranges_fixed_pool_stride_bottleneck(; kwargs...) =
-    nucleotide_ranges_fixed_pool_stride(; num_no_pool_layers = 1, kwargs...)
+    nucleotide_ranges_fixed_pool_stride(;
+        bottleneck_layer = 2, num_no_pool_layers = 2, infer_base_layer_code = true, kwargs...)
 
 nucleotide_ranges_fixed_pool_stride_multioutputs_bottleneck(; kwargs...) =
-    nucleotide_ranges_fixed_pool_stride_multioutputs(; num_no_pool_layers = 1, kwargs...)
+    nucleotide_ranges_fixed_pool_stride_multioutputs(;
+        bottleneck_layer = 2, num_no_pool_layers = 2, infer_base_layer_code = true, kwargs...)
 
 amino_acid_ranges_fixed_pool_stride(; kwargs...) = HyperParamRanges(;
     # num_img_layers_range = 3:4,
