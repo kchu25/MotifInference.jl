@@ -1,6 +1,10 @@
 # MotifInference.jl
 
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://kchu25.github.io/MotifInference.jl/dev/)
+
 Discover functional motif combinations from sequence-to-measurement data (DNA / RNA).
+
+📖 **Documentation:** [kchu25.github.io/MotifInference.jl](https://kchu25.github.io/MotifInference.jl/dev/) — including the full [`run_method` argument reference](https://kchu25.github.io/MotifInference.jl/dev/run_method/).
 
 ## Installation
 
