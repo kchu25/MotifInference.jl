@@ -42,18 +42,11 @@ How your sequences are interpreted and which model is built.
 
 | Argument                | Default    | Meaning |
 | ----------------------- | ---------- | ------- |
-| `seq_type`              | `:dna`     | `:dna`, `:rna`, or `:protein`. |
-| `type`                  | `:conv`    | `:conv` = convolutional motif discovery; `:mut` = mutagenesis mode (per-position attribution, e.g. deep-mutational-scan / protein data). |
+| `seq_type`              | `:dna`     | `:dna` or `:rna`. |
 | `normalization_method`  | `:zscore`  | How labels are normalized before training: `:zscore`, `:identity`, `:log`, … |
-| `multioutput`           | `false`    | Set `true` when `labels` has **multiple columns** (DNA/RNA multi-output model). |
-| `conv_bottleneck`       | `false`    | DNA/RNA only: use a bottleneck conv layer (squeezes the inference-code conv layer; needs sequences ≳ 25 nt). |
-| `GET_CONSENSUS`         | `false`    | Compute a consensus sequence — typically `true` for amino-acid mutagenesis. |
+| `multioutput`           | `false`    | Set `true` when `labels` has **multiple columns** (multi-output model). |
+| `conv_bottleneck`       | `false`    | Use a bottleneck conv layer (squeezes the inference-code conv layer; needs sequences ≳ 25 nt). |
 | `feature_names`         | `nothing`  | Column names for multi-output `labels` (used to label per-output result folders). |
-
-!!! warning "Protein currently requires `type=:mut`"
-    The model resolver only builds a protein model for `seq_type=:protein,
-    type=:mut`. `seq_type=:protein` with `type=:conv` has no model and will
-    fail. For DNA/RNA either `type` works.
 
 ---
 
@@ -94,7 +87,6 @@ Which outputs get processed and how the HTML report is labeled.
 | `output_indices`      | `nothing` | Which output columns to process. `nothing` → all outputs (when the model predicts all positions), otherwise the first. Pass e.g. `1:5` or `[2]`. |
 | `sensitivity_analysis`| `false`   | Run sensitivity analysis in the conv-case rendering. |
 | `dataset_name`        | `nothing` | Name shown in the rendered report. |
-| `protein_name`        | `nothing` | Protein name shown in the `:mut`-case rendering. |
 
 ---
 
@@ -141,10 +133,8 @@ run_method(trc)
 ## Recipes
 
 ```julia
-# Quick protein mutagenesis run — only 3 candidate models instead of 25
-run_method("lacI_ec50.csv";
-    save_folder_name="ec50", seq_type=:protein, type=:mut,
-    GET_CONSENSUS=true, tune_n_trials=3)
+# Quick run — only 3 candidate models instead of the default 25
+run_method("data/mydata.csv"; tune_n_trials=3)
 
 # RNA with a fixed seed → no tuning at all (fastest)
 run_method("data/utr.csv"; seq_type=:rna, seed=42)
@@ -156,14 +146,13 @@ run_method("data/mydata.csv"; motif_sizes=[2, 3], save_root="/scratch/results")
 run_method("data/multi.jld2"; multioutput=true, output_indices=1:5)
 
 # In-memory, no file on disk
-run_method(strings, labels; seq_type=:protein, type=:mut, GET_CONSENSUS=true)
+run_method(strings, labels; seq_type=:dna)
 ```
 
 ## Valid symbol values at a glance
 
 | Keyword                | Accepts |
 | ---------------------- | ------- |
-| `seq_type`             | `:dna`, `:rna`, `:protein` |
-| `type`                 | `:conv`, `:mut` |
+| `seq_type`             | `:dna`, `:rna` |
 | `normalization_method` | `:zscore`, `:identity`, `:log`, … |
 | `loss_spec` (trc-only) | `:mse`, `:mae`, `:huber`, `:binary_cross_entropy` |

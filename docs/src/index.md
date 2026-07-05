@@ -1,7 +1,7 @@
 # MotifInference.jl
 
 Discover functional motif combinations from sequence-to-measurement data
-(DNA / RNA / protein).
+(DNA / RNA).
 
 A CUDA-capable GPU is required for training.
 
