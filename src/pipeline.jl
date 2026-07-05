@@ -190,15 +190,18 @@ function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_
 end
 
 """
-    run_method(trc; tune_max_epochs=15, tune_n_trials=2, tune_patience=10, output_indices=nothing)
+    run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing)
 
-Run the full motif inference pipeline: load data, optionally tune, train, 
+Run the full motif inference pipeline: load data, optionally tune, train,
 and process all (or selected) output indices with HTML rendering.
 
+Tuning runs only when `trc.seed === nothing`; the `tune_*` arguments have no
+effect once a seed is set.
+
 # Keyword Arguments
-- `tune_max_epochs=15`: max epochs for hyperparameter tuning
-- `tune_n_trials=2`: number of tuning trials  
-- `tune_patience=10`: early stopping patience
+- `tune_max_epochs=25`: max epochs per hyperparameter-tuning trial
+- `tune_n_trials=25`: number of tuning trials (candidate models); lower this for a faster run
+- `tune_patience=5`: early stopping patience during tuning
 - `output_indices=nothing`: which outputs to process (default: all if `trc.predict_position == :all`)
 """
 function run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing)
