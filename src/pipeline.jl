@@ -204,10 +204,11 @@ effect once a seed is set.
 - `tune_patience=5`: early stopping patience during tuning
 - `output_indices=nothing`: which outputs to process (default: all if `trc.predict_position == :all`)
 """
-function run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing)
+function run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing)
     data = load_data(trc)
     run_method(trc, data; tune_max_epochs, tune_n_trials, tune_patience,
-        output_indices, sensitivity_analysis, dataset_name, protein_name)
+        output_indices, sensitivity_analysis, dataset_name, protein_name,
+        non_overlapping_sparsify, sparse_unpool_size)
 end
 
 """
@@ -217,7 +218,16 @@ Run the pipeline with an already-loaded `data` (a `OnehotSEQ2EXP_Dataset`),
 bypassing `load_data`. Used by the in-memory `run_method(strings, labels; ...)`
 entry point so no .jld2 file is required.
 """
-function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing)
+function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing)
+    # Optional: make the inference-code layer's receptive fields non-overlapping.
+    # Wrap the model creator so every model built for this run (tuning + final)
+    # enables the sparse max-unpool op. Off by default.
+    if non_overlapping_sparsify
+        base_creator = trc.model_creator
+        trc.model_creator = (args...; kw...) ->
+            base_creator(args...; use_sparse_unpool=true, sparse_unpool_size=sparse_unpool_size, kw...)
+    end
+
     tune_if_needed!(trc, data; tune_max_epochs, tune_n_trials, tune_patience)
 
     m, train_stats, dl_train_eval, dl_test_eval, split_indices =

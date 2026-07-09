@@ -30,6 +30,10 @@ CNN hyperparameters for biological sequence analysis.
 - `use_layernorm::Bool`: Apply LayerNorm after pooling for layers > inference_code_layer (default: false)
 - `use_channel_mask::Bool`: Apply channel masking to PWM and conv layers (default: true)
 
+# Non-overlapping Sparsification Fields
+- `use_sparse_unpool::Bool`: Apply the non-overlapping max-unpool op at `inference_code_layer`, making that layer's receptive fields non-overlapping (default: false)
+- `sparse_unpool_size::Int`: Window/stride/upsample size `p` for the op; `0` = auto (= filter length at `inference_code_layer`: `pfm_len` at layer 0, `img_fil_heights[k]` at conv layer k)
+
 # MBConv Fields
 - `num_mbconv::Int`: Number of MBConv blocks to add (0 = none, default)
 - `mbconv_expansion::Int`: MBConv expansion ratio (default: 4)
@@ -57,7 +61,11 @@ Base.@kwdef struct HyperParameters
     # Normalization
     use_layernorm::Bool = false  # Apply LayerNorm after inference_code_layer
     use_channel_mask::Bool = true  # Apply channel masking to layers
-    
+
+    # Non-overlapping sparsification (applied at inference_code_layer)
+    use_sparse_unpool::Bool = false  # Apply non-overlapping max-unpool at inference_code_layer
+    sparse_unpool_size::Int = 0      # Window size p; 0 = auto (filter length at that layer)
+
     # MBConv (optional EfficientNet-style blocks)
     num_mbconv::Int = 0
     mbconv_expansion::Int = 4

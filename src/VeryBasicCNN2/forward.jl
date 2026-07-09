@@ -2,6 +2,12 @@
 # Forward Pass Implementation
 # ────────────────────────────────────────────────────────────────────────────
 
+# Non-overlapping sparsification window for `layer`: the resolved window when the
+# op is enabled AND `layer` is the designated inference-code layer, else 0 (off).
+_sparse_unpool_p(hp, layer) =
+    (hp.use_sparse_unpool && layer == hp.inference_code_layer) ?
+        sparse_unpool_window(hp, layer) : 0
+
 """
     compute_code_at_layer(model::SeqCNN, sequences, layer; use_sparsity=false)
 
@@ -33,7 +39,8 @@ function compute_code_at_layer(model::SeqCNN, sequences, layer::Int; use_sparsit
     # post-pool form every conv layer produces, so "code at layer L" is defined
     # uniformly for all L (a fully-formed, pooled layer output).
     code = reshape_and_pool(model.pwms(sequences; training=train_mode);
-        is_base_layer=true, pool_size=model.hp.pool_base, stride=model.hp.stride_base)
+        is_base_layer=true, pool_size=model.hp.pool_base, stride=model.hp.stride_base,
+        sparse_unpool_p=_sparse_unpool_p(model.hp, 0))
 
     # Base layer only
     layer == 0 && return code
@@ -72,7 +79,8 @@ function forward_conv_recursive(model::SeqCNN, code, current_layer::Int,
     code = reshape_and_pool(code; is_base_layer=false,
                     pool_size=model.hp.poolsize[current_layer],
                     stride=model.hp.stride[current_layer],
-                    skip_pooling=current_layer > model.hp.pool_lvl_top)
+                    skip_pooling=current_layer > model.hp.pool_lvl_top,
+                    sparse_unpool_p=_sparse_unpool_p(model.hp, current_layer))
     
     # Apply LayerNorm after pooling if past inference layer
     if current_layer > model.hp.inference_code_layer
@@ -107,7 +115,8 @@ function extract_features(model::SeqCNN, sequences; use_sparsity=false, training
     
     # Base layer: PWM activation, reshaped and pooled
     code = reshape_and_pool(model.pwms(sequences; training=train_mode);
-        is_base_layer=true, pool_size=model.hp.pool_base, stride=model.hp.stride_base)
+        is_base_layer=true, pool_size=model.hp.pool_base, stride=model.hp.stride_base,
+        sparse_unpool_p=_sparse_unpool_p(model.hp, 0))
 
     # All conv layers
     code = forward_conv_recursive(model, code, 1; use_sparsity=use_sparsity, training=train_mode)

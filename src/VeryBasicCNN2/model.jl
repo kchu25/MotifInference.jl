@@ -386,18 +386,25 @@ model = create_model((4, 41), 244, 128; ranges=nucleotide_ranges())
 model = create_model((20, 100), 1, 64; ranges=amino_acid_ranges())
 ```
 """
-function create_model(input_dims, output_dim, batch_size::Int; 
-                     rng = Random.GLOBAL_RNG, 
+function create_model(input_dims, output_dim, batch_size::Int;
+                     rng = Random.GLOBAL_RNG,
                      use_cuda::Bool = true,
-                     ranges = DEFAULT_RANGES, 
-                     bottleneck = false)
-    hp = generate_random_hyperparameters(; 
+                     ranges = DEFAULT_RANGES,
+                     bottleneck = false,
+                     use_sparse_unpool::Bool = false,
+                     sparse_unpool_size = nothing)
+    hp = generate_random_hyperparameters(;
         batch_size=batch_size, rng=rng, ranges=ranges, bottleneck=bottleneck)
-    
-    # Enable LayerNorm and MBConv by default 
+
+    # Enable LayerNorm and MBConv by default
     # disable these two if needed for specific experiments
     # hp = with_layernorm(hp, true)
     hp = with_mbconv(hp; num_blocks=3, expansion=3)
+
+    # Optional non-overlapping sparsification at the inference-code layer
+    if use_sparse_unpool
+        hp = with_sparse_unpool(hp; enabled=true, size=sparse_unpool_size)
+    end
     
     # Validate architecture
     if final_conv_embedding_length(hp, input_dims[2]) < 1

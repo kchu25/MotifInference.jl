@@ -84,6 +84,8 @@ function generate_random_hyperparameters(;
         batch_size = batch,
         inference_code_layer = infer_layer,
         use_layernorm = false,  # Default: no LayerNorm
+        use_sparse_unpool = false,   # Default: off; enable via with_sparse_unpool
+        sparse_unpool_size = 0,      # 0 = auto (filter length at inference layer)
         num_mbconv = n_mbconv,
         mbconv_expansion = mbconv_exp
     )

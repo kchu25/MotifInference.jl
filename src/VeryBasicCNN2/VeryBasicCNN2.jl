@@ -44,7 +44,7 @@ export generate_random_hyperparameters
 export nucleotide_ranges, amino_acid_ranges
 export nucleotide_ranges_simple, nucleotide_ranges_fixed_pool_stride
 export amino_acid_ranges_fixed_pool_stride
-export receptive_field, with_batch_size, with_mbconv, num_layers
+export receptive_field, with_batch_size, with_mbconv, with_sparse_unpool, num_layers
 export efficientnet_mbconv_config, with_efficientnet_mbconv
 
 # Model construction — dispatch tag types

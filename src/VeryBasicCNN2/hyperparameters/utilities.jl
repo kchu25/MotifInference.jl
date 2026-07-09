@@ -54,6 +54,8 @@ function with_batch_size(hp::HyperParameters, new_batch_size::Int)
         batch_size = new_batch_size,
         inference_code_layer = hp.inference_code_layer,
         use_layernorm = hp.use_layernorm,
+        use_sparse_unpool = hp.use_sparse_unpool,
+        sparse_unpool_size = hp.sparse_unpool_size,
         num_mbconv = hp.num_mbconv,
         mbconv_expansion = hp.mbconv_expansion
     )
@@ -89,6 +91,8 @@ function with_layernorm(hp::HyperParameters, enabled::Bool=true)
         batch_size = hp.batch_size,
         inference_code_layer = hp.inference_code_layer,
         use_layernorm = enabled,
+        use_sparse_unpool = hp.use_sparse_unpool,
+        sparse_unpool_size = hp.sparse_unpool_size,
         num_mbconv = hp.num_mbconv,
         mbconv_expansion = hp.mbconv_expansion
     )
@@ -121,8 +125,59 @@ function with_mbconv(hp::HyperParameters; num_blocks::Int=2, expansion::Int=4)
         batch_size = hp.batch_size,
         inference_code_layer = hp.inference_code_layer,
         use_layernorm = hp.use_layernorm,
+        use_sparse_unpool = hp.use_sparse_unpool,
+        sparse_unpool_size = hp.sparse_unpool_size,
         num_mbconv = num_blocks,
         mbconv_expansion = expansion
+    )
+end
+
+"""
+    sparse_unpool_window(hp::HyperParameters, layer::Int)
+
+Resolve the non-overlapping sparsification window `p` for `layer`: the configured
+`hp.sparse_unpool_size` if positive, otherwise the filter length at that layer
+(`pfm_len` for the base layer 0, `img_fil_heights[layer]` for conv layer `layer`).
+"""
+function sparse_unpool_window(hp::HyperParameters, layer::Int)
+    hp.sparse_unpool_size > 0 && return hp.sparse_unpool_size
+    return layer == 0 ? hp.pfm_len : hp.img_fil_heights[layer]
+end
+
+"""
+    with_sparse_unpool(hp::HyperParameters; enabled=true, size=nothing)
+
+Toggle the non-overlapping max-unpool op, applied at `hp.inference_code_layer`.
+`size` sets the window `p` (`nothing` / `0` keeps auto = filter length at that
+layer). See [`sparse_max_unpool`](@ref).
+
+# Example
+```julia
+hp = generate_random_hyperparameters()
+hp_su = with_sparse_unpool(hp)              # on, auto window
+hp_su = with_sparse_unpool(hp; size=8)      # on, window p=8
+```
+"""
+function with_sparse_unpool(hp::HyperParameters; enabled::Bool=true, size::Union{Nothing,Int}=nothing)
+    HyperParameters(
+        pfm_len = hp.pfm_len,
+        num_pfms = hp.num_pfms,
+        num_img_filters = hp.num_img_filters,
+        img_fil_widths = hp.img_fil_widths,
+        img_fil_heights = hp.img_fil_heights,
+        pool_base = hp.pool_base,
+        stride_base = hp.stride_base,
+        poolsize = hp.poolsize,
+        stride = hp.stride,
+        pool_lvl_top = hp.pool_lvl_top,
+        softmax_strength_img_fil = hp.softmax_strength_img_fil,
+        batch_size = hp.batch_size,
+        inference_code_layer = hp.inference_code_layer,
+        use_layernorm = hp.use_layernorm,
+        use_sparse_unpool = enabled,
+        sparse_unpool_size = isnothing(size) ? hp.sparse_unpool_size : size,
+        num_mbconv = hp.num_mbconv,
+        mbconv_expansion = hp.mbconv_expansion
     )
 end
 

@@ -198,7 +198,52 @@ function pool_code(code_4d, pool_size, stride; skip_pooling=false)
 end
 
 """
-    reshape_and_pool(code; is_base_layer, pool_size, stride, skip_pooling=false)
+    sparse_max_unpool(code, p)
+
+Non-overlapping sparsification of a 4D code `(spatial, channels, 1, batch)`.
+
+For each channel, partition the spatial axis into non-overlapping windows of size
+`p` and keep only that channel's argmax position in each window (all others → 0);
+the surviving value is a softmax over channels of the pooled winners. This makes
+the receptive field of the filters at this layer non-overlapping. Implemented with
+the differentiable `upsample_nearest` mask trick (window = stride = upsample = `p`).
+
+The spatial length need not be divisible by `p`: the axis is padded at the end
+with `-Inf` (never wins the max), then the result is trimmed back. Differentiable
+end-to-end; gradients flow to the per-channel argmax positions.
+
+A "dead" window (all-zero after ReLU) contributes no survivors — the winner must
+be a strictly positive activation, so the op never invents signal where the layer
+produced none. (Exact ties among positive maxima, which are rare in floats, keep
+all tied positions.)
+"""
+function sparse_max_unpool(code::AbstractArray{T,4}, p::Int) where {T}
+    p ≤ 1 && return code
+    S = size(code, 1)
+    r = mod(S, p)
+    codep = if r == 0
+        code
+    else
+        # device-aware constant pad (same array type as `code`, so GPU training
+        # stays on GPU); it carries no gradient, so build it outside AD.
+        pad = @ignore_derivatives fill!(
+            similar(code, p - r, size(code, 2), size(code, 3), size(code, 4)), T(-Inf))
+        cat(code, pad; dims = 1)
+    end
+
+    y    = maxpool(codep; pool_size = (p, 1), stride = (p, 1))      # per-channel winners
+    vals = Flux.NNlib.softmax(y; dims = 2)                          # softmax over channels
+    # winner positions, but only where the winner is a real (positive) activation —
+    # a fully-dead window (max == 0 after ReLU) contributes no survivors, so the op
+    # never invents signal where there was none.
+    mask = (codep .== Flux.NNlib.upsample_nearest(y, (p, 1))) .& (codep .> zero(T))
+    out  = mask .* Flux.NNlib.upsample_nearest(vals, (p, 1))
+
+    return r == 0 ? out : out[1:S, :, :, :]                         # trim padding
+end
+
+"""
+    reshape_and_pool(code; is_base_layer, pool_size, stride, skip_pooling=false, sparse_unpool_p=0)
 
 Normalize a raw layer output to 4D `(spatial, channels, 1, batch)` and max-pool
 along the spatial axis — the shared "layer transition" used after both the base
@@ -208,11 +253,17 @@ PWM layer and every conv layer.
 `(1, L, C, N)`); otherwise from dim 1 (raw conv output, shape `(L, 1, C, N)`).
 The pool window/stride are applied only along the spatial axis
 (`(pool_size, 1)` / `(stride, 1)`).
+
+`sparse_unpool_p > 0` additionally applies [`sparse_max_unpool`](@ref) with window
+`p` after pooling — used at exactly one designated layer to make its receptive
+fields non-overlapping. `0` (default) skips it entirely.
 """
 function reshape_and_pool(code; is_base_layer::Bool, pool_size::Int, stride::Int,
-                          skip_pooling::Bool=false)
+                          skip_pooling::Bool=false, sparse_unpool_p::Int=0)
     code = reshape_to_4d(code; is_base_layer=is_base_layer)
-    return pool_code(code, (pool_size, 1), (stride, 1); skip_pooling=skip_pooling)
+    code = pool_code(code, (pool_size, 1), (stride, 1); skip_pooling=skip_pooling)
+    sparse_unpool_p > 0 && (code = sparse_max_unpool(code, sparse_unpool_p))
+    return code
 end
 
 # ────────────────────────────────────────────────────────────────────────────
