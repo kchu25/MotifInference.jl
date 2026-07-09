@@ -13,6 +13,9 @@ using Test
     # CPU-only tests for the CSV / in-memory entry points (no training, no GPU).
     include("csv_and_inmemory_tests.jl")
 
+    # CPU-only forward-pass shape & round-trip tests (no training, no GPU).
+    include("forward_shapes_tests.jl")
+
     # The integration tests require a real .jld2 dataset on disk and a GPU.
     # Point MOTIFINFERENCE_TEST_DATA at a dataset to run them:
     #     MOTIFINFERENCE_TEST_DATA=/path/to/data.jld2 julia --project -e 'using Pkg; Pkg.test()'

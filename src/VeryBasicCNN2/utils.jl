@@ -197,6 +197,24 @@ function pool_code(code_4d, pool_size, stride; skip_pooling=false)
     return reshape(pooled, new_len, channels, 1, batch)
 end
 
+"""
+    reshape_and_pool(code; is_base_layer, pool_size, stride, skip_pooling=false)
+
+Normalize a raw layer output to 4D `(spatial, channels, 1, batch)` and max-pool
+along the spatial axis — the shared "layer transition" used after both the base
+PWM layer and every conv layer.
+
+`is_base_layer=true` reads the spatial length from dim 2 (raw PWM output, shape
+`(1, L, C, N)`); otherwise from dim 1 (raw conv output, shape `(L, 1, C, N)`).
+The pool window/stride are applied only along the spatial axis
+(`(pool_size, 1)` / `(stride, 1)`).
+"""
+function reshape_and_pool(code; is_base_layer::Bool, pool_size::Int, stride::Int,
+                          skip_pooling::Bool=false)
+    code = reshape_to_4d(code; is_base_layer=is_base_layer)
+    return pool_code(code, (pool_size, 1), (stride, 1); skip_pooling=skip_pooling)
+end
+
 # ────────────────────────────────────────────────────────────────────────────
 # Filter Normalization & PWM Construction
 # ────────────────────────────────────────────────────────────────────────────

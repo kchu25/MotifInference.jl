@@ -29,17 +29,15 @@ function compute_code_at_layer(model::SeqCNN, sequences, layer::Int; use_sparsit
     # Use model's training flag if not explicitly provided
     train_mode = isnothing(training) ? model.training[] : training
 
-    code = model.pwms(sequences; training=train_mode)
-    code = reshape_to_4d(code; is_base_layer=true)
+    # Base layer: PWM activation reshaped and pooled. This yields the same
+    # post-pool form every conv layer produces, so "code at layer L" is defined
+    # uniformly for all L (a fully-formed, pooled layer output).
+    code = reshape_and_pool(model.pwms(sequences; training=train_mode);
+        is_base_layer=true, pool_size=model.hp.pool_base, stride=model.hp.stride_base)
 
     # Base layer only
     layer == 0 && return code
-    
-    # Start with base layer + pooling
-    code = pool_code(code, 
-        (model.hp.pool_base, 1), 
-        (model.hp.stride_base, 1); skip_pooling=false)
-    
+
     # Process conv layers recursively up to target
     return forward_conv_recursive(model, code, 1, layer; use_sparsity=use_sparsity, training=train_mode)
 end
@@ -71,12 +69,10 @@ function forward_conv_recursive(model::SeqCNN, code, current_layer::Int,
     code = model.conv_layers[current_layer](code, model.hp; use_sparsity=use_sparsity, training=training)
     
     # Apply pooling (or skip if beyond pool_lvl_top)
-    skip_pool = current_layer > model.hp.pool_lvl_top
-    code = reshape_to_4d(code)
-    code = pool_code(code,
-                    (model.hp.poolsize[current_layer], 1),
-                    (model.hp.stride[current_layer], 1);
-                    skip_pooling=skip_pool)
+    code = reshape_and_pool(code; is_base_layer=false,
+                    pool_size=model.hp.poolsize[current_layer],
+                    stride=model.hp.stride[current_layer],
+                    skip_pooling=current_layer > model.hp.pool_lvl_top)
     
     # Apply LayerNorm after pooling if past inference layer
     if current_layer > model.hp.inference_code_layer
@@ -109,20 +105,10 @@ function extract_features(model::SeqCNN, sequences; use_sparsity=false, training
     # Use model's training flag if not explicitly provided
     train_mode = isnothing(training) ? model.training[] : training
     
-    # Base layer
-    code = model.pwms(sequences; training=train_mode)
-    
-    # Base pooling
-    code = reshape_to_4d(code; is_base_layer=true)
-    code = pool_code(code, 
-        (model.hp.pool_base, 1), 
-        (model.hp.stride_base, 1); skip_pooling=false)
+    # Base layer: PWM activation, reshaped and pooled
+    code = reshape_and_pool(model.pwms(sequences; training=train_mode);
+        is_base_layer=true, pool_size=model.hp.pool_base, stride=model.hp.stride_base)
 
-    # code = pool_code(code,
-    #                 (model.hp.pool_base, 1),
-    #                 (model.hp.stride_base, 1);
-    #                 is_base_layer=true)
-    
     # All conv layers
     code = forward_conv_recursive(model, code, 1; use_sparsity=use_sparsity, training=train_mode)
     
@@ -259,19 +245,10 @@ function predict_from_code(model::SeqCNN, code;
     # Use model's training flag if not explicitly provided
     train_mode = isnothing(training) ? model.training[] : training
     
-    # Process remaining layers
-    if layer == 0
-        # From PWM layer: apply base pooling then all conv layers
-        # code = reshape_to_4d(code; is_base_layer=true)
-        code = pool_code(code,
-                        (model.hp.pool_base, 1),
-                        (model.hp.stride_base, 1);
-                        skip_pooling=false)
-        code = forward_conv_recursive(model, code, 1; use_sparsity=use_sparsity, training=train_mode)
-    else
-        # From intermediate layer: continue from next layer
-        code = forward_conv_recursive(model, code, layer + 1; use_sparsity=use_sparsity, training=train_mode)
-    end
+    # `code` is the layer-`layer` checkpoint, which is post-pool for every layer
+    # (including base layer 0 — see compute_code_at_layer). So we always resume at
+    # the next layer with no extra pooling, whichever layer we start from.
+    code = forward_conv_recursive(model, code, layer + 1; use_sparsity=use_sparsity, training=train_mode)
     
     # Apply MBConv blocks
     for mbconv in model.mbconv_blocks
