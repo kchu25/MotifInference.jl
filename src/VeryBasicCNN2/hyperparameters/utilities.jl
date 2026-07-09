@@ -56,6 +56,7 @@ function with_batch_size(hp::HyperParameters, new_batch_size::Int)
         use_layernorm = hp.use_layernorm,
         use_sparse_unpool = hp.use_sparse_unpool,
         sparse_unpool_size = hp.sparse_unpool_size,
+        sparse_unpool_alpha = hp.sparse_unpool_alpha,
         num_mbconv = hp.num_mbconv,
         mbconv_expansion = hp.mbconv_expansion
     )
@@ -93,6 +94,7 @@ function with_layernorm(hp::HyperParameters, enabled::Bool=true)
         use_layernorm = enabled,
         use_sparse_unpool = hp.use_sparse_unpool,
         sparse_unpool_size = hp.sparse_unpool_size,
+        sparse_unpool_alpha = hp.sparse_unpool_alpha,
         num_mbconv = hp.num_mbconv,
         mbconv_expansion = hp.mbconv_expansion
     )
@@ -127,6 +129,7 @@ function with_mbconv(hp::HyperParameters; num_blocks::Int=2, expansion::Int=4)
         use_layernorm = hp.use_layernorm,
         use_sparse_unpool = hp.use_sparse_unpool,
         sparse_unpool_size = hp.sparse_unpool_size,
+        sparse_unpool_alpha = hp.sparse_unpool_alpha,
         num_mbconv = num_blocks,
         mbconv_expansion = expansion
     )
@@ -145,20 +148,22 @@ function sparse_unpool_window(hp::HyperParameters, layer::Int)
 end
 
 """
-    with_sparse_unpool(hp::HyperParameters; enabled=true, size=nothing)
+    with_sparse_unpool(hp::HyperParameters; enabled=true, size=nothing, alpha=nothing)
 
 Toggle the non-overlapping max-unpool op, applied at `hp.inference_code_layer`.
 `size` sets the window `p` (`nothing` / `0` keeps auto = filter length at that
-layer). See [`sparse_max_unpool`](@ref).
+layer). `alpha` sets the softmax strength (`nothing` keeps the current value; `1`
+is plain softmax, larger sharpens toward winner-take-all). See [`sparse_max_unpool`](@ref).
 
 # Example
 ```julia
 hp = generate_random_hyperparameters()
-hp_su = with_sparse_unpool(hp)              # on, auto window
-hp_su = with_sparse_unpool(hp; size=8)      # on, window p=8
+hp_su = with_sparse_unpool(hp)                    # on, auto window, alpha=1
+hp_su = with_sparse_unpool(hp; size=8, alpha=20)  # on, window p=8, sharp softmax
 ```
 """
-function with_sparse_unpool(hp::HyperParameters; enabled::Bool=true, size::Union{Nothing,Int}=nothing)
+function with_sparse_unpool(hp::HyperParameters; enabled::Bool=true,
+                            size::Union{Nothing,Int}=nothing, alpha=nothing)
     HyperParameters(
         pfm_len = hp.pfm_len,
         num_pfms = hp.num_pfms,
@@ -176,6 +181,7 @@ function with_sparse_unpool(hp::HyperParameters; enabled::Bool=true, size::Union
         use_layernorm = hp.use_layernorm,
         use_sparse_unpool = enabled,
         sparse_unpool_size = isnothing(size) ? hp.sparse_unpool_size : size,
+        sparse_unpool_alpha = isnothing(alpha) ? hp.sparse_unpool_alpha : DEFAULT_FLOAT_TYPE(alpha),
         num_mbconv = hp.num_mbconv,
         mbconv_expansion = hp.mbconv_expansion
     )

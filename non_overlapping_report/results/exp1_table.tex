@@ -1,0 +1,8 @@
+\begin{table}[h]\centering
+\caption{Do different filters fire at different positions? Inference layer $L^\star=1$, window $p=5$, $S=43$; 2972 sequences, 40 epochs. \emph{Occupancy} = mean filters per occupied position (1.0 = perfectly separated); \emph{null} = chance level under a per-filter position shuffle; \emph{exclusivity} = fraction of positions used by exactly one filter. $\NonOv$ is the scale-free cosine overlap \eqref{eq:norm}.}\label{tab:exp1}
+\begin{tabular}{lrrrrr}\toprule
+Condition & Occupancy & (null) & Exclusivity & $\NonOv$ & survivors/ch \\ \midrule
+Baseline (off) & 10.323 & 2.233 & 0.000 & 0.2357 & 4.17 \\
+Op-at-eval (off+op) & 6.256 & 1.675 & 0.018 & 0.2229 & 2.51 \\
+Sparsify (on) & 5.239 & 1.497 & 0.132 & 0.2508 & 2.13 \\
+\bottomrule\end{tabular}\end{table}

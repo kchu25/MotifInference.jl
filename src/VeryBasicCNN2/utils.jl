@@ -217,7 +217,7 @@ be a strictly positive activation, so the op never invents signal where the laye
 produced none. (Exact ties among positive maxima, which are rare in floats, keep
 all tied positions.)
 """
-function sparse_max_unpool(code::AbstractArray{T,4}, p::Int) where {T}
+function sparse_max_unpool(code::AbstractArray{T,4}, p::Int; alpha=one(T)) where {T}
     p ≤ 1 && return code
     S = size(code, 1)
     r = mod(S, p)
@@ -232,7 +232,10 @@ function sparse_max_unpool(code::AbstractArray{T,4}, p::Int) where {T}
     end
 
     y    = maxpool(codep; pool_size = (p, 1), stride = (p, 1))      # per-channel winners
-    vals = Flux.NNlib.softmax(y; dims = 2)                          # softmax over channels
+    # softmax over channels, with strength `alpha` (temperature 1/alpha). alpha=1 is the
+    # plain softmax; larger alpha sharpens toward a per-position winner-take-all across
+    # channels, shrinking subordinate filters' values at each shared position.
+    vals = Flux.NNlib.softmax(T(alpha) .* y; dims = 2)
     # winner positions, but only where the winner is a real (positive) activation —
     # a fully-dead window (max == 0 after ReLU) contributes no survivors, so the op
     # never invents signal where there was none.
@@ -255,14 +258,15 @@ The pool window/stride are applied only along the spatial axis
 (`(pool_size, 1)` / `(stride, 1)`).
 
 `sparse_unpool_p > 0` additionally applies [`sparse_max_unpool`](@ref) with window
-`p` after pooling — used at exactly one designated layer to make its receptive
-fields non-overlapping. `0` (default) skips it entirely.
+`p` (and softmax strength `sparse_unpool_alpha`) after pooling — used at exactly one
+designated layer to make its receptive fields non-overlapping. `0` (default) skips it.
 """
 function reshape_and_pool(code; is_base_layer::Bool, pool_size::Int, stride::Int,
-                          skip_pooling::Bool=false, sparse_unpool_p::Int=0)
+                          skip_pooling::Bool=false, sparse_unpool_p::Int=0,
+                          sparse_unpool_alpha=1)
     code = reshape_to_4d(code; is_base_layer=is_base_layer)
     code = pool_code(code, (pool_size, 1), (stride, 1); skip_pooling=skip_pooling)
-    sparse_unpool_p > 0 && (code = sparse_max_unpool(code, sparse_unpool_p))
+    sparse_unpool_p > 0 && (code = sparse_max_unpool(code, sparse_unpool_p; alpha=sparse_unpool_alpha))
     return code
 end
 

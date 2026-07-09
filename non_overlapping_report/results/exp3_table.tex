@@ -1,0 +1,10 @@
+\begin{table}[h]\centering
+\caption{Softmax strength $\alpha$ vs.\ separation vs.\ generalization ($L^\star=1$, $p=5$, $K=10$ filters, bottleneck 10; 40 epochs, 80/20 split). Lower occupancy = filters more separated; test $\rho$ (Spearman) is held-out DMS accuracy.}\label{tab:exp3}
+\begin{tabular}{lrrrrr}\toprule
+Condition & Occupancy & (null) & Exclusivity & test $\rho$ & test $r$ \\ \midrule
+off (baseline) & 5.038 & 1.504 & 0.029 & 0.911 & 0.907 \\
+on, α=1 & 2.817 & 1.220 & 0.202 & 0.894 & 0.891 \\
+on, α=5 & 2.911 & 1.241 & 0.178 & 0.906 & 0.902 \\
+on, α=20 & 2.698 & 1.233 & 0.216 & 0.905 & 0.902 \\
+on, α=100 & 2.388 & 1.200 & 0.288 & 0.828 & 0.818 \\
+\bottomrule\end{tabular}\end{table}

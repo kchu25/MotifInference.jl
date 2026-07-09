@@ -1,0 +1,23 @@
+\paragraph{Turning up $\alpha$ does separate the filters --- and mostly for free.} Read the
+occupancy column down the $\alpha$ rows: $2.82 \to 2.91 \to 2.70 \to 2.39$ as $\alpha$ climbs
+from $1$ to $100$. Exclusivity rises alongside it, $0.20 \to 0.29$: at $\alpha=100$ nearly a
+third of active positions belong to a single filter, up from $0.03$ with the operator off. So
+sharpening the softmax pushes filters onto different positions, exactly as intended.
+
+\paragraph{The cost to accuracy is nothing --- until it isn't.} The held-out Spearman $\rho$
+sits around $0.90$ for every $\alpha$ up to $20$ (off is $0.911$; $\alpha=20$ is $0.905$ --- no
+real difference). Only at $\alpha=100$ does it fall, to $0.828$. \textbf{So there is a clear
+sweet spot: $\alpha\approx20$ buys the extra separation essentially for free, while $\alpha=100$
+trades a real slice of held-out accuracy for a little more.}
+
+\paragraph{It still does not fully separate them.} Even at $\alpha=100$, occupancy is $2.39$
+against a chance level of $1.20$ --- still about twice what random placement would give. The
+soft winner-take-all narrows the gap but never closes it: a typical position still hosts more
+than one filter. Closing it entirely needs the hard version (one winner per position,
+\S\ref{sec:disc}).
+
+\paragraph{Shrinking the filter bank helped too.} This run uses the smaller bottleneck (10
+filters at the inference layer, down from 20). With fewer filters chasing the same positions,
+even the plain operator ($\alpha=1$) already halves the crowding (occupancy $5.0 \to 2.8$) and
+lifts exclusivity to $0.20$ --- a far bigger effect than the wide layer in Experiment~1. Fewer
+filters is, by itself, a lever for separation.

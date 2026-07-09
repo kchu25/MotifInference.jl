@@ -1,0 +1,15 @@
+\paragraph{Verdict: not yet.} Read the ``Sparsify (on)'' row. Its occupancy is $5.2$ --- a
+typical active position is shared by about \emph{five} filters at once, nowhere near the $1.0$
+that would mean ``one filter per spot.'' The chance level (the null column) is $1.5$, so the
+filters are landing on the \emph{same} positions about $3.5\times$ more often than random
+placement. The exclusivity column says it from the other side: only $13\%$ of active positions
+belong to a single filter; the other $87\%$ are shared. So with the operator on, filters still
+crowd onto the same handful of informative positions.
+
+\paragraph{But the operator clearly helped.} It is not doing nothing. Turning it off gives
+total pile-up --- occupancy $10.3$ (half the 20-filter bank on every active spot) and
+exclusivity exactly $0$ (not one private position anywhere). Applying it only at read-out drops
+occupancy to $6.3$. Training with it on drops occupancy further to $5.2$ and lifts exclusivity
+to $0.13$. So the operator roughly \emph{halves} the crowding and creates the first private
+positions --- it moves the right way, it just does not go all the way to ``different positions
+for different filters.''

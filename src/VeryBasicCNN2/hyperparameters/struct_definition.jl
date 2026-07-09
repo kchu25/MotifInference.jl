@@ -33,6 +33,7 @@ CNN hyperparameters for biological sequence analysis.
 # Non-overlapping Sparsification Fields
 - `use_sparse_unpool::Bool`: Apply the non-overlapping max-unpool op at `inference_code_layer`, making that layer's receptive fields non-overlapping (default: false)
 - `sparse_unpool_size::Int`: Window/stride/upsample size `p` for the op; `0` = auto (= filter length at `inference_code_layer`: `pfm_len` at layer 0, `img_fil_heights[k]` at conv layer k)
+- `sparse_unpool_alpha::Float32`: Softmax strength (inverse temperature) for the op; `1` = plain softmax, larger sharpens the over-channels softmax toward a per-position winner-take-all (default: 1)
 
 # MBConv Fields
 - `num_mbconv::Int`: Number of MBConv blocks to add (0 = none, default)
@@ -65,6 +66,7 @@ Base.@kwdef struct HyperParameters
     # Non-overlapping sparsification (applied at inference_code_layer)
     use_sparse_unpool::Bool = false  # Apply non-overlapping max-unpool at inference_code_layer
     sparse_unpool_size::Int = 0      # Window size p; 0 = auto (filter length at that layer)
+    sparse_unpool_alpha::DEFAULT_FLOAT_TYPE = 1  # Softmax strength; >1 sharpens toward winner-take-all
 
     # MBConv (optional EfficientNet-style blocks)
     num_mbconv::Int = 0

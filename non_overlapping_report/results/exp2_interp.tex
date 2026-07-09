@@ -1,0 +1,12 @@
+\paragraph{Sparsifying hurt co-occurrence discovery.} With the operator off, the method found
+$9$ pair-groups ($8$ significant) and $11$ triplet-groups ($10$ significant). With it on, the
+pairs roughly held ($10$ groups, but only $7$ significant) --- and the triplets \emph{vanished
+entirely}: $0$ groups. Occurrences fell across the board too (pairs $1033 \to 698$, singletons
+$7438 \to 5892$).
+
+\paragraph{Why that makes sense.} Co-occurring motifs are, by definition, filters that fire
+\emph{together}. The operator keeps only a couple of survivors per filter and nudges filters
+apart, which removes exactly the joint firing the higher-order groups are built from. Triplets
+--- three filters lit in the same neighborhood --- are the first thing to break. So on this
+dataset the two goals pull against each other: what buys separation in Experiment~3 costs the
+very structure Experiment~2 is trying to recover.

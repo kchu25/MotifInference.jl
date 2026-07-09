@@ -40,7 +40,8 @@ function compute_code_at_layer(model::SeqCNN, sequences, layer::Int; use_sparsit
     # uniformly for all L (a fully-formed, pooled layer output).
     code = reshape_and_pool(model.pwms(sequences; training=train_mode);
         is_base_layer=true, pool_size=model.hp.pool_base, stride=model.hp.stride_base,
-        sparse_unpool_p=_sparse_unpool_p(model.hp, 0))
+        sparse_unpool_p=_sparse_unpool_p(model.hp, 0),
+        sparse_unpool_alpha=model.hp.sparse_unpool_alpha)
 
     # Base layer only
     layer == 0 && return code
@@ -80,7 +81,8 @@ function forward_conv_recursive(model::SeqCNN, code, current_layer::Int,
                     pool_size=model.hp.poolsize[current_layer],
                     stride=model.hp.stride[current_layer],
                     skip_pooling=current_layer > model.hp.pool_lvl_top,
-                    sparse_unpool_p=_sparse_unpool_p(model.hp, current_layer))
+                    sparse_unpool_p=_sparse_unpool_p(model.hp, current_layer),
+                    sparse_unpool_alpha=model.hp.sparse_unpool_alpha)
     
     # Apply LayerNorm after pooling if past inference layer
     if current_layer > model.hp.inference_code_layer
@@ -116,7 +118,8 @@ function extract_features(model::SeqCNN, sequences; use_sparsity=false, training
     # Base layer: PWM activation, reshaped and pooled
     code = reshape_and_pool(model.pwms(sequences; training=train_mode);
         is_base_layer=true, pool_size=model.hp.pool_base, stride=model.hp.stride_base,
-        sparse_unpool_p=_sparse_unpool_p(model.hp, 0))
+        sparse_unpool_p=_sparse_unpool_p(model.hp, 0),
+        sparse_unpool_alpha=model.hp.sparse_unpool_alpha)
 
     # All conv layers
     code = forward_conv_recursive(model, code, 1; use_sparsity=use_sparsity, training=train_mode)

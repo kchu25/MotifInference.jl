@@ -392,7 +392,8 @@ function create_model(input_dims, output_dim, batch_size::Int;
                      ranges = DEFAULT_RANGES,
                      bottleneck = false,
                      use_sparse_unpool::Bool = false,
-                     sparse_unpool_size = nothing)
+                     sparse_unpool_size = nothing,
+                     sparse_unpool_alpha = nothing)
     hp = generate_random_hyperparameters(;
         batch_size=batch_size, rng=rng, ranges=ranges, bottleneck=bottleneck)
 
@@ -403,7 +404,7 @@ function create_model(input_dims, output_dim, batch_size::Int;
 
     # Optional non-overlapping sparsification at the inference-code layer
     if use_sparse_unpool
-        hp = with_sparse_unpool(hp; enabled=true, size=sparse_unpool_size)
+        hp = with_sparse_unpool(hp; enabled=true, size=sparse_unpool_size, alpha=sparse_unpool_alpha)
     end
     
     # Validate architecture

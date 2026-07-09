@@ -86,6 +86,7 @@ function generate_random_hyperparameters(;
         use_layernorm = false,  # Default: no LayerNorm
         use_sparse_unpool = false,   # Default: off; enable via with_sparse_unpool
         sparse_unpool_size = 0,      # 0 = auto (filter length at inference layer)
+        sparse_unpool_alpha = DEFAULT_FLOAT_TYPE(1),  # plain softmax by default
         num_mbconv = n_mbconv,
         mbconv_expansion = mbconv_exp
     )
