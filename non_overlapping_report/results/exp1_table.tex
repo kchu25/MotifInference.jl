@@ -1,8 +1,8 @@
 \begin{table}[h]\centering
-\caption{Do different filters fire at different positions? Inference layer $L^\star=1$, window $p=5$, $S=43$; 2972 sequences, 40 epochs. \emph{Occupancy} = mean filters per occupied position (1.0 = perfectly separated); \emph{null} = chance level under a per-filter position shuffle; \emph{exclusivity} = fraction of positions used by exactly one filter. $\NonOv$ is the scale-free cosine overlap \eqref{eq:norm}.}\label{tab:exp1}
+\caption{Do different filters fire at different positions? Inference layer $L^\star=1$, window $p=3$, $S=45$; 2972 sequences, 40 epochs. A filter counts as active where its magnitude exceeds the 0.9 percentile (the same threshold motif finding uses). \emph{Occupancy} = mean active filters per occupied position (1.0 = perfectly separated); \emph{null} = chance level under a per-filter position shuffle; \emph{exclusivity} = fraction of positions used by exactly one filter. $\NonOv$ is the scale-free cosine overlap \eqref{eq:norm}.}\label{tab:exp1}
 \begin{tabular}{lrrrrr}\toprule
 Condition & Occupancy & (null) & Exclusivity & $\NonOv$ & survivors/ch \\ \midrule
-Baseline (off) & 10.323 & 2.233 & 0.000 & 0.2357 & 4.17 \\
-Op-at-eval (off+op) & 6.256 & 1.675 & 0.018 & 0.2229 & 2.51 \\
-Sparsify (on) & 5.239 & 1.497 & 0.132 & 0.2508 & 2.13 \\
+Baseline (off) & 2.613 & 1.124 & 0.254 & 0.3027 & 2.49 \\
+Op-at-eval (off+op) & 2.229 & 1.100 & 0.298 & 0.3098 & 2.00 \\
+Sparsify (on) & 2.156 & 1.100 & 0.407 & 0.3197 & 1.90 \\
 \bottomrule\end{tabular}\end{table}

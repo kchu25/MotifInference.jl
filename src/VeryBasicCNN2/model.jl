@@ -404,7 +404,8 @@ function create_model(input_dims, output_dim, batch_size::Int;
 
     # Optional non-overlapping sparsification at the inference-code layer
     if use_sparse_unpool
-        hp = with_sparse_unpool(hp; enabled=true, size=sparse_unpool_size, alpha=sparse_unpool_alpha)
+        hp = with_sparse_unpool(hp; enabled=true, size=sparse_unpool_size,
+                                alpha=sparse_unpool_alpha)
     end
     
     # Validate architecture

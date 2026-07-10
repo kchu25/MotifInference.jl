@@ -48,7 +48,7 @@ using JLD2
 @save joinpath(RESULTS, "exp1_codes.jld2") code_off code_eval code_on L p S
 
 mets = [(name, nonoverlap_metrics(c)) for (name, c) in conds]
-pos  = [(name, position_separation(c)) for (name, c) in conds]
+pos  = [(name, position_separation(c; activation_thresh=trc.activation_thresh)) for (name, c) in conds]
 println()
 for ((name, mt), (_, ps)) in zip(mets, pos)
     @printf("%-22s | occupancy=%.3f (null %.3f)  exclusivity=%.3f | norm=%.4f raw=%.4f surv=%.2f\n",
@@ -61,7 +61,9 @@ open(joinpath(RESULTS, "exp1_table.tex"), "w") do io
     println(io, "\\begin{table}[h]\\centering")
     println(io, "\\caption{Do different filters fire at different positions? Inference layer ",
                 "\$L^\\star=$L\$, window \$p=$p\$, \$S=$S\$; $(length(y)) sequences, $EPOCHS epochs. ",
-                "\\emph{Occupancy} = mean filters per occupied position (1.0 = perfectly separated); ",
+                "A filter counts as active where its magnitude exceeds the ",
+                "$(trc.activation_thresh) percentile (the same threshold motif finding uses). ",
+                "\\emph{Occupancy} = mean active filters per occupied position (1.0 = perfectly separated); ",
                 "\\emph{null} = chance level under a per-filter position shuffle; ",
                 "\\emph{exclusivity} = fraction of positions used by exactly one filter. ",
                 "\$\\NonOv\$ is the scale-free cosine overlap \\eqref{eq:norm}.}\\label{tab:exp1}")

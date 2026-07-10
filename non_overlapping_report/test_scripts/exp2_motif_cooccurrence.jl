@@ -67,12 +67,13 @@ end
 
 println("=== OFF discovery ===")
 off = discover(joinpath(RESULTS, "_disc_off"); on=false)
-println("=== ON discovery (shared architecture) ===")
+println("=== ON (softmax) discovery (shared architecture) ===")
 on  = discover(joinpath(RESULTS, "_disc_on"); on=true, seed=off.trc.seed,
                share_json_from=off.trc.save_path)
 
+conds2 = (("OFF", off), ("ON-softmax", on))
 println("\n--- co-occurrence counts ---")
-for (tag, r) in (("OFF", off), ("ON", on))
+for (tag, r) in conds2
     println("$tag: singletons=$(r.n_singletons)")
     for row in r.counts
         @printf("   size %d: %d occurrences, %d distinct groups, %d significant\n",
@@ -88,7 +89,7 @@ open(joinpath(RESULTS, "exp2_table.tex"), "w") do io
                 "``Groups'' = distinct filter-index tuples; ``sig.'' = FDR-significant interacting groups.}\\label{tab:exp2}")
     println(io, "\\begin{tabular}{llrrr}\\toprule")
     println(io, "Condition & Motif size & Occurrences & Distinct groups & Significant \\\\ \\midrule")
-    for (tag, r) in (("OFF (baseline)", off), ("ON (sparsify)", on))
+    for (tag, r) in (("OFF (baseline)", off), ("ON softmax", on))
         for (j, row) in enumerate(r.counts)
             cond = j == 1 ? tag : ""
             @printf(io, "%s & %d & %d & %d & %d \\\\\n",

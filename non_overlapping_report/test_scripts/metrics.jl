@@ -53,8 +53,13 @@ end
 """
     position_separation(code; nshuffle=20, seed=0) -> NamedTuple
 
-Directly measures whether *different filters fire at different positions*, using the
-activation SUPPORT (which entries are nonzero), independent of magnitude.
+Directly measures whether *different filters fire at different positions*.
+
+A filter counts as "active" at a position when its activation magnitude exceeds a global
+threshold: the `activation_thresh` percentile of the positive activations across the whole
+batch. This matches how motif finding decides what is active (BanzhafInference's
+`filter_via_magnitude`: `mag > quantile(mags, activation_thresh)`). With `activation_thresh=0`
+it falls back to the raw support (any nonzero activation).
 
 For each sequence, let `d_s` = number of filters active at position `s`.
 - `mean_occupancy` = mean of `d_s` over occupied positions. 1.0 ⇒ every occupied
@@ -64,12 +69,23 @@ For each sequence, let `d_s` = number of filters active at position `s`.
   `mean_occupancy < null_occupancy` ⇒ filters separated MORE than chance;
   `> null` ⇒ they co-locate MORE than chance.
 """
-function position_separation(code::AbstractArray{<:Real,4}; nshuffle::Int=20, seed::Int=0)
+function position_separation(code::AbstractArray{<:Real,4};
+                             activation_thresh::Real=0, nshuffle::Int=20, seed::Int=0)
     S, K, _, N = size(code)
     rng = MersenneTwister(seed)
+    # global magnitude threshold = activation_thresh percentile of positive activations
+    thr = if activation_thresh > 0
+        pos = filter(>(0), vec(code))
+        isempty(pos) ? 0.0 : quantile(pos, Float64(activation_thresh))
+    else
+        0.0
+    end
     occ_obs = Float64[]; excl = Float64[]; occ_null = Float64[]
     for n in 1:N
-        A = (@view code[:, :, 1, n]) .> 0            # S × K support (Bool)
+        # active = magnitude at/above threshold (>= so a degenerate code whose values all
+        # tie at the max is still counted; activation_thresh==0 falls back to raw >0 support)
+        A = activation_thresh > 0 ? ((@view code[:, :, 1, n]) .>= thr) :
+                                    ((@view code[:, :, 1, n]) .> 0)
         d = vec(sum(A; dims = 2))                    # filters active per position
         occ = d .> 0
         nocc = count(occ)

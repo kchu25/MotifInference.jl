@@ -2,10 +2,10 @@
 \caption{Discovered co-occurring motif groups (shared architecture, 40 train / 30 processor epochs). ``Groups'' = distinct filter-index tuples; ``sig.'' = FDR-significant interacting groups.}\label{tab:exp2}
 \begin{tabular}{llrrr}\toprule
 Condition & Motif size & Occurrences & Distinct groups & Significant \\ \midrule
-OFF (baseline) & 2 & 1033 & 9 & 8 \\
- & 3 & 704 & 11 & 10 \\
+OFF (baseline) & 2 & 1172 & 14 & 14 \\
+ & 3 & 653 & 15 & 15 \\
 \midrule
-ON (sparsify) & 2 & 698 & 10 & 7 \\
- & 3 & 0 & 0 & 0 \\
+ON softmax & 2 & 852 & 9 & 9 \\
+ & 3 & 742 & 11 & 11 \\
 \midrule
 \bottomrule\end{tabular}\end{table}

@@ -1,40 +1,35 @@
-\paragraph{Why it stops halfway.} The reason is baked into how the operator picks winners. It
-runs a separate max \emph{per filter}: each filter looks at its own activations and keeps its
-strongest spot in each window. Crucially, the filters never talk to each other. Nothing in the
-math says ``filter B, that position is taken --- go somewhere else.'' So when a sequence
-position is genuinely informative, every filter that responds to it keeps it, and they all pile
-on. The operator thins out each filter's \emph{own} hits (within-filter non-overlap, which it
-guarantees), but it never divides the territory \emph{between} filters.
+\paragraph{Measure the way discovery measures.} The single most important lesson of this report
+is methodological. On the raw support (every nonzero activation), the operator looks weak: with
+$50$ filters, a typical active position is shared by twenty-plus of them, and sharpening the
+softmax barely dents it. But motif finding never touches those weak activations --- it thresholds
+by magnitude first and acts only on the strong ones. Once the metric matches that threshold, the
+same operator looks effective: the strong activations are already fairly separated with the
+operator off, and softmax $\alpha\approx20$ takes them to four-fifths one-per-position for almost
+nothing. The lesson generalizes: an interpretability operator should be judged on the signal the
+downstream method consumes, not on every floating-point nonzero.
 
-\paragraph{Two levers that help --- and one that would finish the job.} Experiment~3 shows the
-softmax strength $\alpha$ is a \emph{soft} version of exactly the fix we need. Raising $\alpha$
-sharpens the over-channels softmax toward a per-position winner-take-all, and it does move
-filters apart: occupancy falls from $2.8$ toward $2.4$ and exclusivity nearly triples. There is
-a sweet spot around $\alpha=20$ where this separation is free of any held-out accuracy cost;
-only at $\alpha=100$ does accuracy start to slip. A second, independent lever is simply
-\emph{fewer filters}: dropping the inference layer from 20 to 10 filters (the bottleneck)
-halved the crowding on its own. But neither closes the gap --- even $\alpha=100$ leaves
-occupancy at twice chance. The \emph{hard} version would: a single winner per position across
-all filters (a max \emph{across} channels instead of within each), a one-line change that forces
-the territory to be split. Its risk is over-separation --- it may hurt tasks where nearby
-filters \emph{should} co-fire, such as discovering motifs that genuinely co-occur at one site.
+\paragraph{The soft knob is the practical tool.} Softmax strength $\alpha$ is a differentiable dial
+from a soft blend toward a per-position winner-take-all. On the strong activations it is potent and
+cheap: by $\alpha\approx20$, occupancy is $1.2$ and exclusivity $0.83$ at essentially no accuracy
+cost. A narrower filter bank helps too. We also implemented a hard cross-filter winner-take-all
+(a Gumbel-softmax variant, one filter per position at inference); it reaches the ideal outright but
+costs more accuracy and breaks motif discovery (below), and since $\alpha\approx20$ already captures
+almost all the benefit, we removed it. What remains in the code is the clean, soft operator with a
+single strength knob.
 
-\paragraph{Annealing $\alpha$ is the natural next step.} The one place high $\alpha$ hurt was
-training from scratch at $\alpha=100$. Ramping $\alpha$ up \emph{during} training --- let the
-model first learn to fit at $\alpha=1$, then sharpen --- should reach high-$\alpha$ separation
-without paying the accuracy tax. The knob is already in place (\texttt{sparse\_unpool\_alpha});
-only a per-epoch schedule is missing.
+\paragraph{Separation and co-occurrence pull against each other.} Experiment~2 is the cautionary
+half. The method finds co-occurring motifs by looking for filters that fire \emph{together}, and
+separation is precisely the removal of that joint firing. Mild (softmax) separation only trims
+discovery --- $14\to9$ significant pairs, $15\to11$ significant triplets --- but the hard variant we
+tried made the code too sparse to run discovery at all. So the practical reading: \textbf{if the
+goal is co-occurring motifs, keep separation mild}; a crisp one-filter-per-site code is the wrong
+objective for that task.
 
-\paragraph{The downstream cost is real.} At full length (Experiment~2), the sparsification
-\emph{hurt} motif discovery: triplet groups collapsed from $11$ to $0$ and significant pairs
-slipped from $8$ to $7$. This is the flip side of separation. The method finds co-occurring
-motifs by looking for filters that fire together; the operator's whole job is to stop them
-piling up, so it erases the joint firing the higher-order groups need. Separation and
-co-occurrence discovery are, on this dataset, in direct tension --- which reframes the goal:
-if the aim is co-occurrence, mild separation (small $\alpha$, or none) is safer than pushing it
-hard.
+\paragraph{Annealing is the natural next step.} Where separation did cost accuracy (softmax
+$\alpha=100$), the model was trained sharp \emph{from scratch}. Ramping $\alpha$ up \emph{during}
+training --- fit softly first, then harden --- should reach high separation for less of the tax.
+The knob is already in place (\texttt{sparse\_unpool\_alpha}); only a per-epoch schedule is missing.
 
 \paragraph{Caveats.} Single dataset, single seed, an MSE regression proxy for training (not the
-method's full objective), and one inference layer ($L^\star=1$, $p=5$). The occupancy gap
-relative to chance is large and consistent across reruns, so the qualitative verdict is robust;
-the exact numbers are not.
+method's full objective), and one inference layer ($L^\star=1$, $p=3$, $K=50$). The occupancy
+numbers are stable across reruns, so the qualitative verdict is robust; the exact values are not.

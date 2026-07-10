@@ -1,1 +1,1 @@
-{"seed":1,"normalize_Y":true,"normalization_method":"zscore","normalization_mode":"rowwise","use_cuda":true,"randomize_batchsize":true,"batch_size":48,"loss_function":"Flux.Losses.mse","aggregation":"StatsBase.mean","best_r2":0.7132389545440674,"val_loss":0.29983289043108624}
+{"seed":1,"normalize_Y":true,"normalization_method":"zscore","normalization_mode":"rowwise","use_cuda":true,"randomize_batchsize":true,"batch_size":48,"loss_function":"Flux.Losses.mse","aggregation":"StatsBase.mean","best_r2":0.7432081699371338,"val_loss":0.27032023419936496}

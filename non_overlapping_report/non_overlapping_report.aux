@@ -25,28 +25,27 @@
 \@writefile{toc}{\contentsline {section}{\numberline {4}Experiments}{4}{section.4}\protected@file@percent }
 \newlabel{sec:exp}{{4}{4}{Experiments}{section.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Experiment 1 --- do filters land on different positions?}{4}{subsection.4.1}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Do different filters fire at different positions? Inference layer $L^\star =1$, window $p=5$, $S=43$; 2972 sequences, 40 epochs. \emph  {Occupancy} = mean filters per occupied position (1.0 = perfectly separated); \emph  {null} = chance level under a per-filter position shuffle; \emph  {exclusivity} = fraction of positions used by exactly one filter. $\mathrm  {NonOverlap}$ is the scale-free cosine overlap \eqref  {eq:norm}.}}{4}{table.1}\protected@file@percent }
-\newlabel{tab:exp1}{{1}{4}{Do different filters fire at different positions? Inference layer $L^\star =1$, window $p=5$, $S=43$; 2972 sequences, 40 epochs. \emph {Occupancy} = mean filters per occupied position (1.0 = perfectly separated); \emph {null} = chance level under a per-filter position shuffle; \emph {exclusivity} = fraction of positions used by exactly one filter. $\NonOv $ is the scale-free cosine overlap \eqref {eq:norm}}{table.1}{}}
-\@writefile{toc}{\contentsline {paragraph}{Verdict: not yet.}{4}{section*.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{But the operator clearly helped.}{4}{section*.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Experiment 2 --- does it help or hurt motif discovery?}{4}{subsection.4.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Do different filters fire at different positions? Inference layer $L^\star =1$, window $p=3$, $S=45$; 2972 sequences, 40 epochs. A filter counts as active where its magnitude exceeds the 0.9 percentile (the same threshold motif finding uses). \emph  {Occupancy} = mean active filters per occupied position (1.0 = perfectly separated); \emph  {null} = chance level under a per-filter position shuffle; \emph  {exclusivity} = fraction of positions used by exactly one filter. $\mathrm  {NonOverlap}$ is the scale-free cosine overlap \eqref  {eq:norm}.}}{4}{table.1}\protected@file@percent }
+\newlabel{tab:exp1}{{1}{4}{Do different filters fire at different positions? Inference layer $L^\star =1$, window $p=3$, $S=45$; 2972 sequences, 40 epochs. A filter counts as active where its magnitude exceeds the 0.9 percentile (the same threshold motif finding uses). \emph {Occupancy} = mean active filters per occupied position (1.0 = perfectly separated); \emph {null} = chance level under a per-filter position shuffle; \emph {exclusivity} = fraction of positions used by exactly one filter. $\NonOv $ is the scale-free cosine overlap \eqref {eq:norm}}{table.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Measured the way motif finding measures, the picture flips.}{4}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Why the earlier read was too harsh.}{4}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Experiment 2 --- does it help or hurt motif discovery?}{5}{subsection.4.2}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Discovered co-occurring motif groups (shared architecture, 40 train / 30 processor epochs). ``Groups'' = distinct filter-index tuples; ``sig.'' = FDR-significant interacting groups.}}{5}{table.2}\protected@file@percent }
 \newlabel{tab:exp2}{{2}{5}{Discovered co-occurring motif groups (shared architecture, 40 train / 30 processor epochs). ``Groups'' = distinct filter-index tuples; ``sig.'' = FDR-significant interacting groups}{table.2}{}}
-\@writefile{toc}{\contentsline {paragraph}{Sparsifying hurt co-occurrence discovery.}{5}{section*.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Why that makes sense.}{5}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Soft separation leaves motif discovery intact.}{5}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{But full separation would break it.}{5}{section*.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Experiment 3 --- softmax strength vs.\ separation vs.\ generalization}{5}{subsection.4.3}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Softmax strength $\alpha $ vs.\ separation vs.\ generalization ($L^\star =1$, $p=5$, $K=10$ filters, bottleneck 10; 40 epochs, 80/20 split). Lower occupancy = filters more separated; test $\rho $ (Spearman) is held-out DMS accuracy.}}{5}{table.3}\protected@file@percent }
-\newlabel{tab:exp3}{{3}{5}{Softmax strength $\alpha $ vs.\ separation vs.\ generalization ($L^\star =1$, $p=5$, $K=10$ filters, bottleneck 10; 40 epochs, 80/20 split). Lower occupancy = filters more separated; test $\rho $ (Spearman) is held-out DMS accuracy}{table.3}{}}
-\@writefile{toc}{\contentsline {paragraph}{Turning up $\alpha $ does separate the filters --- and mostly for free.}{6}{section*.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{The cost to accuracy is nothing --- until it isn't.}{6}{section*.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{It still does not fully separate them.}{6}{section*.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Shrinking the filter bank helped too.}{6}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{On strong activations, softmax gets almost all the way --- for almost free.}{5}{section*.6}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Softmax strength $\alpha $ vs.\ separation vs.\ generalization ($L^\star =1$, $p=3$, $K=50$ filters, bottleneck 50; 40 epochs, 80/20 split). Active = magnitude above the 0.9 percentile (matching motif finding). Lower occupancy = filters more separated; test $\rho $ (Spearman) is held-out DMS accuracy.}}{6}{table.3}\protected@file@percent }
+\newlabel{tab:exp3}{{3}{6}{Softmax strength $\alpha $ vs.\ separation vs.\ generalization ($L^\star =1$, $p=3$, $K=50$ filters, bottleneck 50; 40 epochs, 80/20 split). Active = magnitude above the 0.9 percentile (matching motif finding). Lower occupancy = filters more separated; test $\rho $ (Spearman) is held-out DMS accuracy}{table.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{The trade-off is gentle.}{6}{section*.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{On the endpoint.}{6}{section*.8}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Left: filter separation (occupancy, lower is more separated) vs.\ softmax strength $\alpha $, with the operator-off and chance levels marked. Right: held-out accuracy (test Spearman $\rho $) vs.\ $\alpha $. Together they show the separation/accuracy trade-off.}}{6}{figure.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion}{6}{section.5}\protected@file@percent }
-\newlabel{sec:disc}{{5}{6}{Discussion}{section.5}{}}
-\@writefile{toc}{\contentsline {paragraph}{Why it stops halfway.}{6}{section*.10}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Two levers that help --- and one that would finish the job.}{7}{section*.11}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Annealing $\alpha $ is the natural next step.}{7}{section*.12}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{The downstream cost is real.}{7}{section*.13}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Caveats.}{7}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion}{7}{section.5}\protected@file@percent }
+\newlabel{sec:disc}{{5}{7}{Discussion}{section.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Measure the way discovery measures.}{7}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The soft knob is the practical tool.}{7}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Separation and co-occurrence pull against each other.}{7}{section*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Annealing is the natural next step.}{7}{section*.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Caveats.}{7}{section*.13}\protected@file@percent }
 \gdef \@abspage@last{7}

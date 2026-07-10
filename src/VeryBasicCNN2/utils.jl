@@ -216,6 +216,9 @@ A "dead" window (all-zero after ReLU) contributes no survivors — the winner mu
 be a strictly positive activation, so the op never invents signal where the layer
 produced none. (Exact ties among positive maxima, which are rare in floats, keep
 all tied positions.)
+
+The per-position value over channels is `softmax(alpha·y)`, where `alpha` is an inverse
+temperature: `1` is the plain softmax, larger sharpens toward a per-position winner-take-all.
 """
 function sparse_max_unpool(code::AbstractArray{T,4}, p::Int; alpha=one(T)) where {T}
     p ≤ 1 && return code
@@ -232,9 +235,7 @@ function sparse_max_unpool(code::AbstractArray{T,4}, p::Int; alpha=one(T)) where
     end
 
     y    = maxpool(codep; pool_size = (p, 1), stride = (p, 1))      # per-channel winners
-    # softmax over channels, with strength `alpha` (temperature 1/alpha). alpha=1 is the
-    # plain softmax; larger alpha sharpens toward a per-position winner-take-all across
-    # channels, shrinking subordinate filters' values at each shared position.
+    # softmax over channels, with strength `alpha` (inverse temperature)
     vals = Flux.NNlib.softmax(T(alpha) .* y; dims = 2)
     # winner positions, but only where the winner is a real (positive) activation —
     # a fully-dead window (max == 0 after ReLU) contributes no survivors, so the op

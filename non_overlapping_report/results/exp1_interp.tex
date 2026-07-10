@@ -1,15 +1,14 @@
-\paragraph{Verdict: not yet.} Read the ``Sparsify (on)'' row. Its occupancy is $5.2$ --- a
-typical active position is shared by about \emph{five} filters at once, nowhere near the $1.0$
-that would mean ``one filter per spot.'' The chance level (the null column) is $1.5$, so the
-filters are landing on the \emph{same} positions about $3.5\times$ more often than random
-placement. The exclusivity column says it from the other side: only $13\%$ of active positions
-belong to a single filter; the other $87\%$ are shared. So with the operator on, filters still
-crowd onto the same handful of informative positions.
+\paragraph{Measured the way motif finding measures, the picture flips.} If we count only the
+\emph{strong} activations --- the ones above the $90$th-percentile threshold that discovery acts
+on, not every nonzero --- the filters are already fairly separated, and the operator helps. With
+the operator off, occupancy is just $2.6$ (of $50$ filters), and a quarter of active positions are
+already private to a single filter (exclusivity $0.25$). Turn the operator on and it improves:
+occupancy drops to $2.2$ and exclusivity climbs to $0.41$ --- now two-fifths of positions belong
+to one filter.
 
-\paragraph{But the operator clearly helped.} It is not doing nothing. Turning it off gives
-total pile-up --- occupancy $10.3$ (half the 20-filter bank on every active spot) and
-exclusivity exactly $0$ (not one private position anywhere). Applying it only at read-out drops
-occupancy to $6.3$. Training with it on drops occupancy further to $5.2$ and lifts exclusivity
-to $0.13$. So the operator roughly \emph{halves} the crowding and creates the first private
-positions --- it moves the right way, it just does not go all the way to ``different positions
-for different filters.''
+\paragraph{Why the earlier read was too harsh.} Counting \emph{every} nonzero activation, the
+same off layer looked hopeless (occupancy $\sim22$, half the bank on every spot). But most of
+those are weak activations that motif finding ignores. Once you look only at the strong ones, the
+crowding is far milder and the operator's nudge is clearly in the right direction --- more private
+positions, fewer shared. So on the metric that actually matters downstream, the plain operator
+already earns its keep; Experiment~3 asks how much further the sharper modes can push it.

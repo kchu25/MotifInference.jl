@@ -1,12 +1,13 @@
-\paragraph{Sparsifying hurt co-occurrence discovery.} With the operator off, the method found
-$9$ pair-groups ($8$ significant) and $11$ triplet-groups ($10$ significant). With it on, the
-pairs roughly held ($10$ groups, but only $7$ significant) --- and the triplets \emph{vanished
-entirely}: $0$ groups. Occurrences fell across the board too (pairs $1033 \to 698$, singletons
-$7438 \to 5892$).
+\paragraph{Soft separation leaves motif discovery intact.} With the operator \textbf{off}, the
+method finds a rich set of co-occurring groups: $14$ pair-groups (all $14$ significant) and $15$
+triplet-groups (all significant). With the \textbf{soft} operator on ($\alpha=1$, the setting this
+run uses), it trims but keeps working --- $9$ significant pairs and $11$ significant triplets. That
+fits Experiment~3: at $\alpha=1$ the operator only mildly separates the strong activations
+(exclusivity $\sim0.37$), so plenty of joint firing survives for the method to find.
 
-\paragraph{Why that makes sense.} Co-occurring motifs are, by definition, filters that fire
-\emph{together}. The operator keeps only a couple of survivors per filter and nudges filters
-apart, which removes exactly the joint firing the higher-order groups are built from. Triplets
---- three filters lit in the same neighborhood --- are the first thing to break. So on this
-dataset the two goals pull against each other: what buys separation in Experiment~3 costs the
-very structure Experiment~2 is trying to recover.
+\paragraph{But full separation would break it.} This is the flip side of the ladder. The method
+finds co-occurring motifs by looking for filters that fire \emph{together}; separation removes
+exactly that joint firing. The hard winner-take-all variant we tried (one filter per position)
+made the code so sparse that discovery could not run at all --- the magnitude threshold left an
+empty activation set. So there is a real ceiling: mild separation is safe for co-occurrence,
+strong separation is not.

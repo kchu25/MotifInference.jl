@@ -61,7 +61,7 @@ function generate_random_hyperparameters(;
         bl = ranges.bottleneck_layer > 0 ? ranges.bottleneck_layer : infer_layer
         bl = clamp(bl, 1, n_layers - 1)
         filters[bl] = bottleneck_filters;
-        heights[bl] = 5;
+        heights[bl] = 3;
         widths[bl+1] = bottleneck_filters;
     end
 
