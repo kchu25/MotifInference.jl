@@ -17,6 +17,21 @@ costs more accuracy and breaks motif discovery (below), and since $\alpha\approx
 almost all the benefit, we removed it. What remains in the code is the clean, soft operator with a
 single strength knob.
 
+\paragraph{Discovery already enforces the non-overlap it needs.} An important piece of context
+sharpens what the operator is (and is not) for. The co-occurrence counter (EpicHyperSketch,
+v0.0.8) never counts overlapping motif groups: for a candidate it computes the gap between
+consecutive filters, $\text{position}_2 - \text{position}_1 - \texttt{filter\_len}$, and discards
+the group when that gap is negative --- the filter footprints (width
+$\texttt{filter\_len}=\texttt{pfm\_len}$) must not overlap. So every co-occurring motif in
+Experiment~2 is \emph{already} non-overlapping by construction, independent of the embedding
+operator. In this model $\texttt{pfm\_len}=1$, so the rule reduces to ``the two motifs sit at
+distinct positions'' --- exactly what occupancy and exclusivity measure. The two ``non-overlaps''
+are one idea at two layers: the counter imposes it on discovered \emph{combinations}; the operator
+(and the metric) act on the underlying \emph{activations}. The consequence is clarifying: the
+operator is \emph{not} needed to make discovered co-occurrences non-overlapping --- that is
+guaranteed downstream --- so its real lever is the cleanliness of the code itself, which is where
+the trade-offs we measured live.
+
 \paragraph{Separation and co-occurrence pull against each other.} Experiment~2 is the cautionary
 half. The method finds co-occurring motifs by looking for filters that fire \emph{together}, and
 separation is precisely the removal of that joint firing. Mild (softmax) separation only trims

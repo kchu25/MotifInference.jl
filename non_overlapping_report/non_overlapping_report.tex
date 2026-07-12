@@ -199,6 +199,12 @@ spot for one filter. Closer to $1$ is better.
 active positions. This is the chance level: occupancy \emph{below} null means filters separate
 \emph{more} than random; \emph{above} null means they co-locate \emph{more} than random.
 \end{itemize}
+This is not an arbitrary metric: it measures, at the activation level, the very property the
+downstream discovery counter enforces at the combination level. EpicHyperSketch (v0.0.8) counts a
+co-occurring motif group only when its filters are non-overlapping --- it discards any group whose
+consecutive filters have gap $<\texttt{filter\_len}$ (here $\texttt{filter\_len}=\texttt{pfm\_len}=1$,
+so the requirement is simply ``distinct positions''). Occupancy and exclusivity are the
+embedding-level reading of exactly that ``distinct positions'' condition.
 
 \section{Experiments}
 \label{sec:exp}
@@ -221,7 +227,9 @@ the model.
 The point of separating filters is downstream: does it change the co-occurring motifs the method
 recovers --- pairs and triplets of filters that fire together? We run the full discovery pipeline
 on both models (40 training epochs, shared architecture) and count the groups, straight from the
-discovery dataframes, without HTML rendering.
+discovery dataframes, without HTML rendering. Note that the counter already only reports
+\emph{non-overlapping} groups (\S\ref{sec:disc}), so what changes here is \emph{how many} such
+groups survive, not whether they overlap.
 \input{results/exp2_table.tex}
 \input{results/exp2_interp.tex}
 
