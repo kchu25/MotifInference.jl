@@ -1,7 +1,7 @@
 name = "MotifInference"
 uuid = "e1c1f7b9-3d4a-4d3e-9b6a-2f5c8d1a7b34"
 authors = ["Shane Kuei-Hsien Chu (skchu@wustl.edu)"]
-version = "0.1.2"
+version = "0.1.3"
 
 [deps]
 Arrow = "69666777-d1a9-59fb-9406-91d4454c9d45"
