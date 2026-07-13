@@ -204,11 +204,12 @@ effect once a seed is set.
 - `tune_patience=5`: early stopping patience during tuning
 - `output_indices=nothing`: which outputs to process (default: all if `trc.predict_position == :all`)
 """
-function run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing)
+function run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing, bottleneck_filters=nothing, bottleneck_height=nothing)
     data = load_data(trc)
     run_method(trc, data; tune_max_epochs, tune_n_trials, tune_patience,
         output_indices, sensitivity_analysis, dataset_name, protein_name,
-        non_overlapping_sparsify, sparse_unpool_size, sparse_unpool_alpha)
+        non_overlapping_sparsify, sparse_unpool_size, sparse_unpool_alpha,
+        bottleneck_filters, bottleneck_height)
 end
 
 """
@@ -218,7 +219,7 @@ Run the pipeline with an already-loaded `data` (a `OnehotSEQ2EXP_Dataset`),
 bypassing `load_data`. Used by the in-memory `run_method(strings, labels; ...)`
 entry point so no .jld2 file is required.
 """
-function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing)
+function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing, bottleneck_filters=nothing, bottleneck_height=nothing)
     # Optional: make the inference-code layer's receptive fields non-overlapping.
     # Wrap the model creator so every model built for this run (tuning + final)
     # enables the sparse max-unpool op. Off by default.
@@ -227,6 +228,18 @@ function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patien
         trc.model_creator = (args...; kw...) ->
             base_creator(args...; use_sparse_unpool=true, sparse_unpool_size=sparse_unpool_size,
                          sparse_unpool_alpha=sparse_unpool_alpha, kw...)
+    end
+
+    # Optional: override the bottleneck squeeze dimensions (filter count and height).
+    # Only affects bottleneck model creators; each unset value keeps its hardcoded
+    # default (BOTTLENECK_FILTERS=50, BOTTLENECK_HEIGHT=3). Wrap so every model built
+    # for this run (tuning + final) uses the overrides.
+    if !isnothing(bottleneck_filters) || !isnothing(bottleneck_height)
+        base_creator = trc.model_creator
+        bn_kw = Pair{Symbol,Any}[]
+        isnothing(bottleneck_filters) || push!(bn_kw, :bottleneck_filters => bottleneck_filters)
+        isnothing(bottleneck_height)  || push!(bn_kw, :bottleneck_height  => bottleneck_height)
+        trc.model_creator = (args...; kw...) -> base_creator(args...; bn_kw..., kw...)
     end
 
     tune_if_needed!(trc, data; tune_max_epochs, tune_n_trials, tune_patience)
@@ -336,6 +349,25 @@ function read_seq_label_csv(path::String)
 end
 
 """
+    announce_bottleneck_selection(; seq_type, type, conv_bottleneck, bottleneck_filters, bottleneck_height)
+
+Make the bottleneck selection explicit at run time. When a bottleneck model is
+selected (see [`model_uses_bottleneck`](@ref)), log the squeeze dimensions in
+effect (falling back to the hardcoded `BOTTLENECK_FILTERS` / `BOTTLENECK_HEIGHT`
+defaults). When `bottleneck_filters` / `bottleneck_height` were passed but the
+selected model is *not* a bottleneck model, warn that the overrides are ignored
+so they never silently no-op.
+"""
+function announce_bottleneck_selection(; seq_type, type, conv_bottleneck,
+                                       bottleneck_filters, bottleneck_height)
+    if model_uses_bottleneck(; seq_type, type, conv_bottleneck)
+        @info "Loading bottleneck model" seq_type type conv_bottleneck bottleneck_filters=something(bottleneck_filters, VeryBasicCNN2.BOTTLENECK_FILTERS) bottleneck_height=something(bottleneck_height, VeryBasicCNN2.BOTTLENECK_HEIGHT)
+    elseif !isnothing(bottleneck_filters) || !isnothing(bottleneck_height)
+        @warn "bottleneck_filters/bottleneck_height were set but the selected model is not a bottleneck model — these overrides are ignored. For DNA/RNA pass conv_bottleneck=true; protein mutation (type=:mut) models are bottleneck by default." seq_type type conv_bottleneck
+    end
+end
+
+"""
     run_method(datapath; seq_type=:dna, seed=nothing, ...)
 
 Run pipeline directly from a file path. The format is chosen by extension:
@@ -370,6 +402,8 @@ function run_method(datapath::String;
     activation_thresh::Float64=0.9,
     multioutput::Bool=false,
     conv_bottleneck::Bool=false,
+    bottleneck_filters=nothing,
+    bottleneck_height=nothing,
     save_root::String=".",
     save_folder_name::Union{String,Nothing}=nothing,
     # run_method kwargs
@@ -378,12 +412,15 @@ function run_method(datapath::String;
         strings, labels = read_seq_label_csv(datapath)
         return run_method(strings, labels;
             seq_type, type, normalization_method, seed, motif_sizes,
-            activation_thresh, multioutput, conv_bottleneck, save_root, save_folder_name,
+            activation_thresh, multioutput, conv_bottleneck,
+            bottleneck_filters, bottleneck_height, save_root, save_folder_name,
             name=splitext(basename(datapath))[1], kwargs...)
     end
+    announce_bottleneck_selection(; seq_type, type, conv_bottleneck,
+        bottleneck_filters, bottleneck_height)
     trc = make_trc(datapath; seq_type, type, normalization_method, seed,
         motif_sizes, activation_thresh, multioutput, conv_bottleneck, save_root, save_folder_name)
-    run_method(trc; kwargs...)
+    run_method(trc; bottleneck_filters, bottleneck_height, kwargs...)
 end
 
 """
@@ -419,6 +456,8 @@ function run_method(strings::Vector{String}, labels::Union{AbstractVector,Abstra
     activation_thresh::Float64=0.9,
     multioutput::Bool=false,
     conv_bottleneck::Bool=false,
+    bottleneck_filters=nothing,
+    bottleneck_height=nothing,
     save_root::String=".",
     save_folder_name::Union{String,Nothing}=nothing,
     name::String="inmemory",
@@ -430,6 +469,8 @@ function run_method(strings::Vector{String}, labels::Union{AbstractVector,Abstra
 
     folder = something(save_folder_name, name)
     save_path = setup_results_folder(folder; save_root)
+    announce_bottleneck_selection(; seq_type, type, conv_bottleneck,
+        bottleneck_filters, bottleneck_height)
     model_creator = resolve_model_creator(; seq_type, type, multioutput, conv_bottleneck)
 
     # datapath is unused here (data is already in memory), so pass an empty placeholder
@@ -437,7 +478,7 @@ function run_method(strings::Vector{String}, labels::Union{AbstractVector,Abstra
         "", model_creator, save_path, "n/a";
         seq_type, seed, type, motif_sizes, normalization_method, activation_thresh)
 
-    run_method(trc, data; kwargs...)
+    run_method(trc, data; bottleneck_filters, bottleneck_height, kwargs...)
 end
 
 """

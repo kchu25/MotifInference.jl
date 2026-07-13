@@ -15,6 +15,7 @@ using Statistics: mean, var
 const DEFAULT_FLOAT_TYPE = Float32
 const SOFTMAX_ALPHA = DEFAULT_FLOAT_TYPE(500)
 const BOTTLENECK_FILTERS = 50
+const BOTTLENECK_HEIGHT = 3
 # ────────────────────────────────────────────────────────────────────────────
 # Core Components (Order Matters)
 # ────────────────────────────────────────────────────────────────────────────

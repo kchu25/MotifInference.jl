@@ -37,6 +37,19 @@ function resolve_model_creator(; seq_type::Symbol, type::Symbol, multioutput::Bo
     end
 end
 
+"""
+    model_uses_bottleneck(; seq_type, type, conv_bottleneck) -> Bool
+
+Whether `resolve_model_creator` selects a bottleneck model for these settings.
+Mirrors its branching: protein mutation (`type == :mut`) models are always
+bottleneck; DNA/RNA models are bottleneck only when `conv_bottleneck=true`.
+This is the switch that governs whether `bottleneck_filters` / `bottleneck_height`
+have any effect.
+"""
+function model_uses_bottleneck(; seq_type::Symbol, type::Symbol, conv_bottleneck::Bool=false)
+    seq_type == :protein ? (type == :mut) : conv_bottleneck
+end
+
 
 const loss_specs = Dict(
     :mse => (loss=Flux.mse, agg=StatsBase.mean),

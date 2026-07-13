@@ -21,6 +21,7 @@ function generate_random_hyperparameters(;
     ranges = DEFAULT_RANGES,
     bottleneck = false,
     bottleneck_filters = BOTTLENECK_FILTERS,
+    bottleneck_height = BOTTLENECK_HEIGHT,
 )
     n_layers = rand(rng, ranges.num_img_layers_range)
     
@@ -61,7 +62,7 @@ function generate_random_hyperparameters(;
         bl = ranges.bottleneck_layer > 0 ? ranges.bottleneck_layer : infer_layer
         bl = clamp(bl, 1, n_layers - 1)
         filters[bl] = bottleneck_filters;
-        heights[bl] = 3;
+        heights[bl] = bottleneck_height;
         widths[bl+1] = bottleneck_filters;
     end
 

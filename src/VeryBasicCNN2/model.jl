@@ -391,11 +391,14 @@ function create_model(input_dims, output_dim, batch_size::Int;
                      use_cuda::Bool = true,
                      ranges = DEFAULT_RANGES,
                      bottleneck = false,
+                     bottleneck_filters = BOTTLENECK_FILTERS,
+                     bottleneck_height = BOTTLENECK_HEIGHT,
                      use_sparse_unpool::Bool = false,
                      sparse_unpool_size = nothing,
                      sparse_unpool_alpha = nothing)
     hp = generate_random_hyperparameters(;
-        batch_size=batch_size, rng=rng, ranges=ranges, bottleneck=bottleneck)
+        batch_size=batch_size, rng=rng, ranges=ranges, bottleneck=bottleneck,
+        bottleneck_filters=bottleneck_filters, bottleneck_height=bottleneck_height)
 
     # Enable LayerNorm and MBConv by default
     # disable these two if needed for specific experiments
