@@ -109,6 +109,24 @@ function tune_if_needed!(trc, data; tune_max_epochs=15, tune_n_trials=2, tune_pa
 end
 
 """
+    sanitize_path_component(s)
+
+Turn an arbitrary feature/label name into a single filesystem- and URL-safe path
+component. Feature names carry units like `ddG_ML_float (kcal/mol)`; the `/` would
+otherwise split the rendering folder into a nested subfolder, and spaces/parens make
+the paths awkward to serve and to reference from HTML.
+
+Keeps `[A-Za-z0-9_-]`, maps everything else to `_`, collapses runs, trims, and caps
+the length. Returns `""` if nothing survives.
+"""
+function sanitize_path_component(s::AbstractString; maxlen::Int=100)
+    cleaned = replace(String(s), r"[^A-Za-z0-9_-]+" => "_")
+    cleaned = strip(cleaned, ['_'])
+    length(cleaned) > maxlen && (cleaned = rstrip(cleaned[1:maxlen], '_'))
+    return cleaned
+end
+
+"""
     process_output(data, m, train_stats, dl_train, dl_test, trc, output_index)
 
 Process a single output index: compute contributions, tag significance, 
@@ -143,13 +161,14 @@ function process_output(data, m, train_stats, dl_train, dl_test, trc, output_ind
         MotifInference.BanzhafInference.obtain_interaction_results(
             contributions_df_filtered, dfs)
 
-    # Render folder name
+    # Render folder name (sanitized: feature names may contain `/`, spaces, parens)
     render_folder_name = "renderings_" * begin
-        if !isnothing(data.raw_data.feature_names)
-            data.raw_data.feature_names[output_index]
+        name = if !isnothing(data.raw_data.feature_names)
+            sanitize_path_component(data.raw_data.feature_names[output_index])
         else
-            "$(output_index)"
+            ""
         end
+        isempty(name) ? "$(output_index)" : name
     end
 
     return contributions_df_filtered, dfs, pts_all, pts_test, interaction_summaries_str, interaction_summaries, render_folder_name
