@@ -179,9 +179,16 @@ end
                 all_indices, interaction_summaries_str, render_folder_name)
 
 Generate the HTML motif visualization pages.
+
+The top-movers ranking behind `index.html` is also dumped to
+`<save_path>/top_motifs.csv` — one file per dataset, at the result-folder root
+rather than inside a rendering folder, so a whole run can be compared with a
+single `run_N/*/top_motifs.csv` glob. Multi-output runs append into that one
+file; `feature_label` distinguishes the rows.
 """
-function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing)
+function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, feature_label=nothing, append_top_motifs=false)
     save_path = joinpath(trc.save_path, render_folder_name)
+    top_movers_csv = joinpath(trc.save_path, "top_motifs.csv")
 
     if trc.type == :mut
         MotifInference.GlyphEctoplasm.plot_motifs_mut_case(data, m, contributions_df_filtered, dfs;
@@ -195,6 +202,9 @@ function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_
             page_title=trc.title_string,
             protein_name=protein_name,
             use_rna=trc.seq_type == :rna,
+            top_movers_csv=top_movers_csv,
+            top_movers_csv_append=append_top_motifs,
+            top_movers_label=feature_label,
             )
     else
         MotifInference.GlyphEctoplasm.plot_motifs_conv_case(data, m, trc.motif_sizes, contributions_df_filtered, dfs, pts_all, pts_test, all_indices; interaction_summaries=interaction_summaries_str,
@@ -203,7 +213,10 @@ function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_
             page_title=trc.title_string,
             rna=trc.seq_type == :rna,
             sensitivity_analysis=sensitivity_analysis,
-            dataset_name=dataset_name
+            dataset_name=dataset_name,
+            top_movers_csv=top_movers_csv,
+            top_movers_csv_append=append_top_motifs,
+            top_movers_label=feature_label,
             )
     end
 end
@@ -281,7 +294,7 @@ function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patien
         [1]
     end
 
-    for output_index in indices
+    for (loop_pos, output_index) in enumerate(indices)
         @info "Processing output $output_index / $(length(indices))..."
 
         contributions_df_filtered, dfs, pts_all, pts_test, interaction_summaries_str, interaction_summaries, render_folder_name =
@@ -306,7 +319,12 @@ function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patien
             @warn "No motifs found for output $output_index"
         end
 
-        render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis, dataset_name, protein_name)
+        # Raw (unsanitized) label for the CSV; the first output truncates
+        # top_motifs.csv, the rest append into it.
+        feature_label = isnothing(data.raw_data.feature_names) ? nothing :
+                        data.raw_data.feature_names[output_index]
+
+        render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis, dataset_name, protein_name, feature_label, append_top_motifs=(loop_pos > 1))
 
         @info "Output $output_index done → $(render_folder_name)"
     end
