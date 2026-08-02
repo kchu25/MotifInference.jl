@@ -185,8 +185,13 @@ The top-movers ranking behind `index.html` is also dumped to
 rather than inside a rendering folder, so a whole run can be compared with a
 single `run_N/*/top_motifs.csv` glob. Multi-output runs append into that one
 file; `feature_label` distinguishes the rows.
+
+`points_only=true` writes only `<rendering>/indicator_points.csv` — the point
+cloud behind the indicator (yy-KDE) plots — and skips every figure and page.
+Use it to backfill that file into an existing result folder without paying for
+a full re-render.
 """
-function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, feature_label=nothing, append_top_motifs=false)
+function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, feature_label=nothing, append_top_motifs=false, points_only=false)
     save_path = joinpath(trc.save_path, render_folder_name)
     top_movers_csv = joinpath(trc.save_path, "top_motifs.csv")
 
@@ -205,6 +210,7 @@ function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_
             top_movers_csv=top_movers_csv,
             top_movers_csv_append=append_top_motifs,
             top_movers_label=feature_label,
+            points_only=points_only,
             )
     else
         MotifInference.GlyphEctoplasm.plot_motifs_conv_case(data, m, trc.motif_sizes, contributions_df_filtered, dfs, pts_all, pts_test, all_indices; interaction_summaries=interaction_summaries_str,
@@ -217,6 +223,7 @@ function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_
             top_movers_csv=top_movers_csv,
             top_movers_csv_append=append_top_motifs,
             top_movers_label=feature_label,
+            points_only=points_only,
             )
     end
 end
@@ -235,13 +242,18 @@ effect once a seed is set.
 - `tune_n_trials=25`: number of tuning trials (candidate models); lower this for a faster run
 - `tune_patience=5`: early stopping patience during tuning
 - `output_indices=nothing`: which outputs to process (default: all if `trc.predict_position == :all`)
+- `points_only=false`: write only `indicator_points.csv` per rendering folder and
+  skip all figures/pages. Intended for backfilling an existing result folder:
+  with the cached model, processor and motifs `.jld2` in place, the run reduces
+  to a forward pass plus one CSV write. Pass `trc.seed` explicitly so the run
+  reuses the cached model instead of re-tuning.
 """
-function run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing, bottleneck_filters=nothing, bottleneck_height=nothing)
+function run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing, bottleneck_filters=nothing, bottleneck_height=nothing, points_only=false)
     data = load_data(trc)
     run_method(trc, data; tune_max_epochs, tune_n_trials, tune_patience,
         output_indices, sensitivity_analysis, dataset_name, protein_name,
         non_overlapping_sparsify, sparse_unpool_size, sparse_unpool_alpha,
-        bottleneck_filters, bottleneck_height)
+        bottleneck_filters, bottleneck_height, points_only)
 end
 
 """
@@ -251,7 +263,7 @@ Run the pipeline with an already-loaded `data` (a `OnehotSEQ2EXP_Dataset`),
 bypassing `load_data`. Used by the in-memory `run_method(strings, labels; ...)`
 entry point so no .jld2 file is required.
 """
-function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing, bottleneck_filters=nothing, bottleneck_height=nothing)
+function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing, bottleneck_filters=nothing, bottleneck_height=nothing, points_only=false)
     # Optional: make the inference-code layer's receptive fields non-overlapping.
     # Wrap the model creator so every model built for this run (tuning + final)
     # enables the sparse max-unpool op. Off by default.
@@ -324,7 +336,7 @@ function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patien
         feature_label = isnothing(data.raw_data.feature_names) ? nothing :
                         data.raw_data.feature_names[output_index]
 
-        render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis, dataset_name, protein_name, feature_label, append_top_motifs=(loop_pos > 1))
+        render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis, dataset_name, protein_name, feature_label, append_top_motifs=(loop_pos > 1), points_only)
 
         @info "Output $output_index done → $(render_folder_name)"
     end
