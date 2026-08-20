@@ -18,6 +18,7 @@ include(joinpath(@__DIR__, "struct_def.jl"))
 include(joinpath(@__DIR__, "tuning_and_train_final.jl"))
 include(joinpath(@__DIR__, "run_thru.jl"))
 
+include(joinpath(@__DIR__, "wt_reference.jl"))
 include(joinpath(@__DIR__, "dataset_utils.jl"))
 include(joinpath(@__DIR__, "datasets.jl"))
 include(joinpath(@__DIR__, "pipeline.jl"))

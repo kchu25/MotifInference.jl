@@ -10,7 +10,10 @@ mutable struct training_and_rendering_config
     patience::Int                        # patience for triggering early stopping (number of epochs with no improvement)
     seq_type::Symbol                     # :dna, :rna, or :protein
     type::Symbol                         # :conv or :mut  --> this will affect training and rendering
-    normalization_method::Symbol                # :identity, :zscore, or :log, etc.
+    normalization_method::Symbol                # :identity, :zscore, :zscore_wt, :log, etc.
+    wt_reference::Union{Nothing, Real, AbstractVector{<:Real}}  # value the labels are centred on when normalization_method=:zscore_wt.
+                                                                # nothing for every other method. For mutagenesis this is the WILD-TYPE
+                                                                # measurement, so the model's structural f(wild type)=0 lands on it.
     loss_spec::NamedTuple{(:loss, :agg), Tuple{Function, Function}}  # loss function and aggregation method for training
     ###### motif inference fields ######
     scale_back::Bool                     # whether to scale back the normalization for Banzhaf index calculations
@@ -32,6 +35,7 @@ function training_and_rendering_config(
     seed=nothing,
     type=:conv,
     normalization_method=:zscore,    
+    wt_reference=nothing,
     loss_spec=loss_specs[:mse],
     max_training_epochs=40,
     max_processor_epochs=60,
@@ -48,7 +52,7 @@ function training_and_rendering_config(
     return training_and_rendering_config(        
         datapath, model_creator, seed, max_training_epochs, 
         max_processor_epochs, predict_position, patience, seq_type, type, 
-        normalization_method, loss_spec, scale_back, top_and_bot_counts, activation_thresh, motif_sizes, count_threshold, Q_threshold, 
+        normalization_method, wt_reference, loss_spec, scale_back, top_and_bot_counts, activation_thresh, motif_sizes, count_threshold, Q_threshold, 
         dpi, save_path, title_string
     )
 end

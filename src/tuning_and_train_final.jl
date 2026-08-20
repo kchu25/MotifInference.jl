@@ -6,6 +6,7 @@ function perform_hyperparameter_tuning(data, trc;
         trial_number_start=trial_number_start, 
         n_trials=n_trials, 
         normalization_method=trc.normalization_method,
+        wt_reference=trc.wt_reference,
         save_folder=trc.save_path, 
         max_epochs=max_epochs, 
         patience=patience,
@@ -52,7 +53,8 @@ function train_and_evaluate_model(data, trc;
     setup, batch_size = AutoComputationalGraphTuning._prepare_final_model_setup(data, trc.model_creator; 
     seed = config_json.seed, 
     randomize_batchsize = config_json.randomize_batchsize, 
-    normalization_method = trc.normalization_method)
+    normalization_method = trc.normalization_method,
+    wt_reference = trc.wt_reference)
     dl_train_eval, dl_test_eval = AutoComputationalGraphTuning._create_eval_dataloaders(setup, batch_size)
 
     return m, train_stats, dl_train_eval, dl_test_eval, split_indices

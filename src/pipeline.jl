@@ -29,6 +29,7 @@ function make_trc(f, datasets_folder=datasets_processed_folder;
         datapath, f.model_creator, save_path, "n/a";
         seq_type=f.seq_type, seed=f.seed, type=f.type,
         motif_sizes=f.motif_sizes, normalization_method=f.normalization_method,
+        wt_reference=get(f, :wt_reference, nothing),
         activation_thresh=f.activation_thresh
     )
 end
@@ -42,7 +43,8 @@ Infers the dataset name from the filename and uses sensible defaults.
 # Keyword Arguments
 - `seq_type = :dna`
 - `type = :conv`
-- `normalization_method = :zscore`
+- `normalization_method = :zscore`   (`:zscore_wt` centres on `wt_reference` instead of the label mean)
+- `wt_reference = nothing`           value the labels are centred on when `normalization_method=:zscore_wt`
 - `seed = nothing` (triggers tuning)
 - `motif_sizes = [2, 3, 4, 5]`
 - `activation_thresh = 0.9`
@@ -63,6 +65,7 @@ function make_trc(datapath::String;
     seq_type::Symbol=:dna,
     type::Symbol=:conv,
     normalization_method::Symbol=:zscore,
+    wt_reference::Union{Nothing,Real,AbstractVector{<:Real}}=nothing,
     seed::Union{Int,Nothing}=nothing,
     motif_sizes::Vector{Int}=[2, 3, 4, 5],
     activation_thresh::Float64=0.9,
@@ -77,7 +80,7 @@ function make_trc(datapath::String;
 
     MotifInference.training_and_rendering_config(
         datapath, model_creator, save_path, "n/a";
-        seq_type, seed, type, motif_sizes, normalization_method, activation_thresh
+        seq_type, seed, type, motif_sizes, normalization_method, wt_reference, activation_thresh
     )
 end
 
@@ -452,6 +455,7 @@ function run_method(datapath::String;
     seq_type::Symbol=:dna,
     type::Symbol=:conv,
     normalization_method::Symbol=:zscore,
+    wt_reference::Union{Nothing,Real,AbstractVector{<:Real}}=nothing,
     seed::Union{Int,Nothing}=nothing,
     motif_sizes::Vector{Int}=[2, 3, 4, 5],
     activation_thresh::Float64=0.9,
@@ -466,14 +470,14 @@ function run_method(datapath::String;
     if endswith(lowercase(datapath), ".csv")
         strings, labels = read_seq_label_csv(datapath)
         return run_method(strings, labels;
-            seq_type, type, normalization_method, seed, motif_sizes,
+            seq_type, type, normalization_method, wt_reference, seed, motif_sizes,
             activation_thresh, multioutput, conv_bottleneck,
             bottleneck_filters, bottleneck_height, save_root, save_folder_name,
             name=splitext(basename(datapath))[1], kwargs...)
     end
     announce_bottleneck_selection(; seq_type, type, conv_bottleneck,
         bottleneck_filters, bottleneck_height)
-    trc = make_trc(datapath; seq_type, type, normalization_method, seed,
+    trc = make_trc(datapath; seq_type, type, normalization_method, wt_reference, seed,
         motif_sizes, activation_thresh, multioutput, conv_bottleneck, save_root, save_folder_name)
     run_method(trc; bottleneck_filters, bottleneck_height, kwargs...)
 end
@@ -509,6 +513,7 @@ function run_method(strings::Vector{String}, labels::Union{AbstractVector,Abstra
     seq_type::Symbol=:dna,
     type::Symbol=:conv,
     normalization_method::Symbol=:zscore,
+    wt_reference::Union{Nothing,Real,AbstractVector{<:Real}}=nothing,
     seed::Union{Int,Nothing}=nothing,
     motif_sizes::Vector{Int}=[2, 3, 4, 5],
     activation_thresh::Float64=0.9,
@@ -534,7 +539,7 @@ function run_method(strings::Vector{String}, labels::Union{AbstractVector,Abstra
     # datapath is unused here (data is already in memory), so pass an empty placeholder
     trc = MotifInference.training_and_rendering_config(
         "", model_creator, save_path, "n/a";
-        seq_type, seed, type, motif_sizes, normalization_method, activation_thresh)
+        seq_type, seed, type, motif_sizes, normalization_method, wt_reference, activation_thresh)
 
     run_method(trc, data; bottleneck_filters, bottleneck_height, kwargs...)
 end

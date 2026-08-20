@@ -102,6 +102,7 @@ function dataset(;
         seq_type::Symbol = :dna,
         type::Symbol = :conv,
         normalization_method::Symbol = :zscore,
+        wt_reference::Union{Nothing,Real,AbstractVector{<:Real}} = nothing,
         seed::Union{Int, Nothing} = nothing,
         motif_sizes::Vector{Int} = [2,3,4,5],
         activation_thresh::Float64 = 0.95,
@@ -114,7 +115,7 @@ function dataset(;
         model_creator = resolve_model_creator(; seq_type, type, multioutput, conv_bottleneck)
     end
     return (;
-        name, file, model_creator, normalization_method, 
+        name, file, model_creator, normalization_method, wt_reference,
         type, seq_type, seed, motif_sizes, activation_thresh, loss_spec
     )
 end
