@@ -47,8 +47,9 @@ Infers the dataset name from the filename and uses sensible defaults.
 - `motif_sizes = [2, 3, 4, 5]`
 - `activation_thresh = 0.9`
 - `multioutput = false`
-- `conv_bottleneck = false` (DNA/RNA only: squeeze the inference-code conv layer, like
-  the amino-acid bottleneck model; needs sequences ≳ 25nt)
+- `conv_bottleneck = false` (DNA/RNA *convolution* runs only: squeeze the inference-code
+  conv layer, like the amino-acid bottleneck model; needs sequences ≳ 25nt. Ignored when
+  `type = :mut`, which already selects a bottleneck mutagenesis model)
 - `save_root = "."` (current working directory)
 - `save_folder_name = nothing` (defaults to the file's basename without extension)
 
@@ -412,7 +413,7 @@ function announce_bottleneck_selection(; seq_type, type, conv_bottleneck,
     if model_uses_bottleneck(; seq_type, type, conv_bottleneck)
         @info "Loading bottleneck model" seq_type type conv_bottleneck bottleneck_filters=something(bottleneck_filters, VeryBasicCNN2.BOTTLENECK_FILTERS) bottleneck_height=something(bottleneck_height, VeryBasicCNN2.BOTTLENECK_HEIGHT)
     elseif !isnothing(bottleneck_filters) || !isnothing(bottleneck_height)
-        @warn "bottleneck_filters/bottleneck_height were set but the selected model is not a bottleneck model — these overrides are ignored. For DNA/RNA pass conv_bottleneck=true; protein mutation (type=:mut) models are bottleneck by default." seq_type type conv_bottleneck
+        @warn "bottleneck_filters/bottleneck_height were set but the selected model is not a bottleneck model — these overrides are ignored. For a DNA/RNA convolution run pass conv_bottleneck=true; mutation runs (type=:mut) are bottleneck by default for protein and for DNA/RNA alike." seq_type type conv_bottleneck
     end
 end
 
@@ -440,6 +441,11 @@ and `run_method` (output_indices, tune_* params) are accepted.
 
     # RNA with specific outputs
     run_method("/path/to/mydata.jld2"; seq_type=:rna, seed=42, output_indices=1:5)
+
+    # RNA/DNA mutagenesis — needs a dataset built with GET_CONSENSUS=true, so the
+    # mutation encoding (X_mut) exists; without a consensus the run silently falls
+    # back to plain one-hot.
+    run_method("/path/to/rna_dms.jld2"; seq_type=:rna, type=:mut, activation_thresh=0.8)
 """
 function run_method(datapath::String;
     # make_trc kwargs
@@ -492,6 +498,9 @@ All keyword arguments from `make_trc`/`run_method` are accepted, plus:
 
     # amino acids for mutagenesis
     run_method(strings, labels; GET_CONSENSUS=true, seq_type=:protein, type=:mut)
+
+    # nucleotides for mutagenesis (GET_CONSENSUS=true is what turns on the mutation encoding)
+    run_method(strings, labels; GET_CONSENSUS=true, seq_type=:rna, type=:mut)
 """
 function run_method(strings::Vector{String}, labels::Union{AbstractVector,AbstractMatrix};
     feature_names::Union{Vector{String},Nothing}=nothing,

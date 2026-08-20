@@ -135,6 +135,54 @@ nucleotide_ranges_fixed_pool_stride_multioutputs_bottleneck(; kwargs...) =
     nucleotide_ranges_fixed_pool_stride_multioutputs(;
         bottleneck_layer = 2, num_no_pool_layers = 2, infer_base_layer_code = true, kwargs...)
 
+"""
+    nucleotide_ranges_fixed_pool_stride_mut(; kwargs...)
+
+Hyperparameter ranges for **nucleotide mutagenesis** (`seq_type = :dna` / `:rna`
+with `type = :mut`) — the DNA/RNA counterpart of
+[`amino_acid_ranges_fixed_pool_stride`](@ref), which is what the protein
+mutagenesis pipeline runs on.
+
+A mutagenesis model sees the *mutation* encoding (`OnehotSEQ2EXP_Dataset.X_mut`):
+a sparse tensor that is 1 only where a sequence differs from the consensus. A
+motif is then a *region of co-occurring substitutions*, not a sliding PWM match,
+so the architecture departs from the convolution presets on three points:
+
+  • `pfm_length = 1` — the base layer is a per-site letter detector ("which base
+    did this position mutate to"), never a width-5-7 sliding PWM.
+  • `pool_size = stride = 1` with `num_no_pool_layers = 1` — no downsampling
+    before the interpreted layer, so every code position maps back to exactly
+    one input site.
+  • `infer_base_layer_code = false` — motifs are read at conv layer 1 instead of
+    the base layer. Paired with `bottleneck = true` (see
+    [`create_model_nucleotides_fixed_pool_stride_mut_w_bottleneck`](@ref)) that
+    layer is squeezed to `BOTTLENECK_FILTERS` filters of height
+    `BOTTLENECK_HEIGHT`, and its height *is* the mutation-region width: the
+    receptive field works out to `pfm_len + BOTTLENECK_HEIGHT - 1` input
+    positions (8 nt at the current defaults). Widen the regions with
+    the `bottleneck_height` keyword, not with `pfm_length`.
+
+The one substantive departure from the amino-acid preset is `num_base_filters`.
+The base layer's filters are near-hard PWMs (`softmax_alpha = SOFTMAX_ALPHA`), so
+a width-1 filter over a 4-row alphabet can express only a handful of distinct
+detectors where a 20-row alphabet can express many; 48 base filters would be
+mostly redundant copies. Sequences should be ≳ `BOTTLENECK_HEIGHT + 2` long, as
+with any bottleneck preset.
+"""
+nucleotide_ranges_fixed_pool_stride_mut(; kwargs...) = HyperParamRanges(;
+    num_img_layers_range = 4:4,
+    pfm_length_range = 1:1,
+    num_base_filters_range = 12:4:24,
+    conv_filter_range = 32:8:64,
+    conv_filter_height_range = 1:1,
+    pool_size_range = 1:1,  # overridden by num_no_pool_layers in generation
+    stride_range = 1:1,     # overridden by num_no_pool_layers in generation
+    batch_size_options = [32, 64, 128],
+    num_no_pool_layers = 1,
+    infer_base_layer_code = false,
+    kwargs...
+)
+
 amino_acid_ranges_fixed_pool_stride(; kwargs...) = HyperParamRanges(;
     # num_img_layers_range = 3:4,
     # pfm_length_range = 3:2:5,

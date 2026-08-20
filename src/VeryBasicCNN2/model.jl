@@ -568,6 +568,18 @@ create_model_nucleotides_fixed_pool_stride_multioutputs_bottleneck(args...; kw..
     create_model(args...; ranges = nucleotide_ranges_fixed_pool_stride_multioutputs_bottleneck(),
                  bottleneck = true, kw...)
 
+# Nucleotide MUTAGENESIS model — the DNA/RNA counterpart of
+# `create_model_aminoacids_fixed_pool_stride_w_bottleneck`, selected by
+# `resolve_model_creator` for `seq_type = :dna`/`:rna` with `type = :mut`.
+# Like the two creators above it bypasses the tag combinator (there is no tag for
+# the mut preset) and pairs `bottleneck = true` with the dedicated ranges. Note the
+# difference from those two: here `bottleneck_layer = 0` (the preset's default), so
+# the squeeze lands ON the interpreted layer exactly as in the amino-acid model —
+# which is what makes the squeeze filter's height the mutation-region width.
+create_model_nucleotides_fixed_pool_stride_mut_w_bottleneck(args...; kw...) =
+    create_model(args...; ranges = nucleotide_ranges_fixed_pool_stride_mut(),
+                 bottleneck = true, kw...)
+
 create_model_aminoacids_tanh(args...; kw...) =
     create_model(AminoAcids(), UseTanh(), args...; kw...)
 

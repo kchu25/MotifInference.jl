@@ -44,6 +44,7 @@ export plain, resnet, mbconv, deep_plain
 export generate_random_hyperparameters
 export nucleotide_ranges, amino_acid_ranges
 export nucleotide_ranges_simple, nucleotide_ranges_fixed_pool_stride
+export nucleotide_ranges_fixed_pool_stride_mut
 export amino_acid_ranges_fixed_pool_stride
 export receptive_field, with_batch_size, with_mbconv, with_sparse_unpool, num_layers
 export efficientnet_mbconv_config, with_efficientnet_mbconv
@@ -57,6 +58,7 @@ export create_model_nucleotides, create_model_nucleotides_simple
 export create_model_nucleotides_fixed_pool_stride
 export create_model_nucleotides_fixed_pool_stride_bottleneck
 export create_model_nucleotides_fixed_pool_stride_multioutputs_bottleneck
+export create_model_nucleotides_fixed_pool_stride_mut_w_bottleneck
 export create_model_aminoacids, create_model_aminoacids_fixed_pool_stride
 
 # Forward pass functions

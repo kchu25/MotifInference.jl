@@ -9,13 +9,20 @@
 Automatically select the correct model constructor based on sequence type and output mode.
 
 # Logic
-- Protein + mutation → bottleneck model
+- Protein + mutation → amino-acid bottleneck model
 - Protein otherwise  → standard aminoacid model
+- DNA/RNA + mutation → nucleotide **mutagenesis** bottleneck model
+  ([`VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_mut_w_bottleneck`](@ref))
 - DNA/RNA + multioutput → multioutput nucleotide model (bottleneck variant if `conv_bottleneck`)
 - DNA/RNA otherwise    → standard nucleotide model (bottleneck variant if `conv_bottleneck`)
 
-`conv_bottleneck` only affects the DNA/RNA paths; protein mutation already uses a
-bottleneck model.
+`type == :mut` takes precedence over `multioutput` on the DNA/RNA path: the mut
+preset is a mutation-region architecture, and multiple outputs are handled by the
+prediction head (`output_dim`), not by the ranges — the multioutput presets differ
+from their single-output counterparts only in filter counts.
+
+`conv_bottleneck` only affects the DNA/RNA *convolution* paths; both mutation
+models are bottleneck models already, so it is ignored when `type == :mut`.
 """
 function resolve_model_creator(; seq_type::Symbol, type::Symbol, multioutput::Bool=false,
                                conv_bottleneck::Bool=false)
@@ -25,7 +32,14 @@ function resolve_model_creator(; seq_type::Symbol, type::Symbol, multioutput::Bo
             return VeryBasicCNN2.create_model_aminoacids_fixed_pool_stride_w_bottleneck
         end
     else  # :dna or :rna
-        if multioutput
+        if type == :mut
+            # Mutation encoding (X_mut) in, mutation regions out — the nucleotide
+            # analogue of the amino-acid mut model. Without this branch a :mut run
+            # on DNA/RNA silently trained a *convolution* architecture (sliding
+            # width-5-7 PWMs, stride-2 pooling) while the motif extraction and the
+            # rendering both went down the mutagenesis path.
+            return VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_mut_w_bottleneck
+        elseif multioutput
             return conv_bottleneck ?
                 VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_multioutputs_bottleneck :
                 VeryBasicCNN2.create_model_nucleotides_fixed_pool_stride_multioutputs
@@ -41,13 +55,14 @@ end
     model_uses_bottleneck(; seq_type, type, conv_bottleneck) -> Bool
 
 Whether `resolve_model_creator` selects a bottleneck model for these settings.
-Mirrors its branching: protein mutation (`type == :mut`) models are always
-bottleneck; DNA/RNA models are bottleneck only when `conv_bottleneck=true`.
-This is the switch that governs whether `bottleneck_filters` / `bottleneck_height`
-have any effect.
+Mirrors its branching: mutation models (`type == :mut`) are always bottleneck,
+for protein and for DNA/RNA alike; DNA/RNA *convolution* models are bottleneck
+only when `conv_bottleneck=true`. This is the switch that governs whether
+`bottleneck_filters` / `bottleneck_height` have any effect — and for the mutation
+models `bottleneck_height` is the mutation-region width.
 """
 function model_uses_bottleneck(; seq_type::Symbol, type::Symbol, conv_bottleneck::Bool=false)
-    seq_type == :protein ? (type == :mut) : conv_bottleneck
+    type == :mut || (seq_type != :protein && conv_bottleneck)
 end
 
 
@@ -69,7 +84,8 @@ Only `name` and `file` are required; everything else has defaults.
 - `name::String` — human-readable dataset name (required)
 - `file::String` — .jld2 filename (required)
 - `seq_type = :dna` — sequence type (:dna, :rna, :protein)
-- `type = :conv` — model type (:conv, :mut)
+- `type = :conv` — model type (:conv, :mut); `:mut` selects a mutagenesis model for
+  protein and for DNA/RNA alike
 - `normalization = :zscore` — normalization method
 - `seed = nothing` — random seed (nothing → triggers tuning)
 - `motif_sizes = [2, 3]` — motif group sizes to search

@@ -113,3 +113,78 @@ end
         @test V.predict_from_code(on, c; layer=l, training=false) ≈ full_on
     end
 end
+
+# ────────────────────────────────────────────────────────────────────────────
+# Nucleotide mutagenesis model (seq_type = :dna/:rna, type = :mut)
+#
+# Guards the two halves of the DNA/RNA mut path: that `resolve_model_creator`
+# actually selects the mutagenesis architecture (before this existed, a :mut run
+# on nucleotides silently trained a convolution model while the motif extraction
+# and rendering went down the mutagenesis path), and that the architecture it
+# builds has the properties the mutagenesis pipeline relies on — a width-1 base
+# layer, no downsampling, and a receptive field equal to the squeeze height,
+# which is what the renderer reports as the mutation-region width.
+# ────────────────────────────────────────────────────────────────────────────
+@testset "nucleotide mutagenesis model (CPU)" begin
+    @testset "model selection" begin
+        for st in (:dna, :rna), mo in (false, true), cb in (false, true)
+            @test MotifInference.resolve_model_creator(; seq_type=st, type=:mut,
+                      multioutput=mo, conv_bottleneck=cb) ===
+                  V.create_model_nucleotides_fixed_pool_stride_mut_w_bottleneck
+            @test MotifInference.model_uses_bottleneck(; seq_type=st, type=:mut, conv_bottleneck=cb)
+        end
+        # protein mut and the nucleotide convolution paths are untouched
+        @test MotifInference.resolve_model_creator(; seq_type=:protein, type=:mut) ===
+              V.create_model_aminoacids_fixed_pool_stride_w_bottleneck
+        @test MotifInference.resolve_model_creator(; seq_type=:dna, type=:conv) ===
+              V.create_model_nucleotides_fixed_pool_stride
+        @test MotifInference.resolve_model_creator(; seq_type=:dna, type=:conv, conv_bottleneck=true) ===
+              V.create_model_nucleotides_fixed_pool_stride_bottleneck
+        @test !MotifInference.model_uses_bottleneck(; seq_type=:dna, type=:conv)
+        @test MotifInference.model_uses_bottleneck(; seq_type=:dna, type=:conv, conv_bottleneck=true)
+    end
+
+    @testset "architecture" begin
+        m = V.create_model_nucleotides_fixed_pool_stride_mut_w_bottleneck(
+                (4, 60), 1, 8; use_cuda=false, rng=MersenneTwister(1))
+        @test m !== nothing
+        hp = m.hp
+        @test hp.pfm_len == 1                                   # per-site letter detector
+        @test hp.inference_code_layer == 1                      # motifs read at conv layer 1
+        @test all(isone, hp.poolsize)                           # no downsampling anywhere
+        @test all(isone, hp.stride)
+        @test hp.num_img_filters[1] == V.BOTTLENECK_FILTERS     # squeeze on the interpreted layer
+        @test hp.img_fil_heights[1] == V.BOTTLENECK_HEIGHT
+        # Region width == squeeze height: pfm_len is 1 and nothing pools before layer 1.
+        @test m.receptive_field == V.BOTTLENECK_HEIGHT
+        @test V.receptive_field(hp) == V.BOTTLENECK_HEIGHT
+
+        # bottleneck_height is the knob for widening mutation regions
+        wide = V.create_model_nucleotides_fixed_pool_stride_mut_w_bottleneck(
+                   (4, 60), 1, 8; use_cuda=false, rng=MersenneTwister(1), bottleneck_height=12)
+        @test wide.receptive_field == 12
+    end
+
+    @testset "forward pass on a mutation encoding" begin
+        m = V.create_model_nucleotides_fixed_pool_stride_mut_w_bottleneck(
+                (4, 60), 1, 8; use_cuda=false, rng=MersenneTwister(1))
+        V.eval!(m)
+
+        # Mutation encoding: mostly zeros, a 1 only where a sequence differs from
+        # the consensus (what OnehotSEQ2EXP_Dataset.X_mut looks like for DNA/RNA).
+        rng = MersenneTwister(99)
+        Xmut = zeros(Float32, 4, 60, 1, 8)
+        for n in 1:8, _ in 1:3
+            Xmut[rand(rng, 1:4), rand(rng, 1:60), 1, n] = 1f0
+        end
+
+        full = V.predict_from_sequences(m, Xmut; training=false)
+        @test size(full, ndims(full)) == 8
+        @test all(isfinite, full)
+        for L in 0:m.num_conv_layers
+            code = V.compute_code_at_layer(m, Xmut, L; training=false)
+            @test size(code, 4) == 8
+            @test V.predict_from_code(m, code; layer=L, training=false) ≈ full
+        end
+    end
+end
