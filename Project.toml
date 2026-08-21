@@ -1,7 +1,7 @@
 name = "MotifInference"
 uuid = "e1c1f7b9-3d4a-4d3e-9b6a-2f5c8d1a7b34"
 authors = ["Shane Kuei-Hsien Chu (skchu@wustl.edu)"]
-version = "0.1.8"
+version = "0.1.9"
 
 [deps]
 Arrow = "69666777-d1a9-59fb-9406-91d4454c9d45"
@@ -31,7 +31,7 @@ Flux = "0.16.10"
 GlyphEctoplasm = "0.4"
 JLD2 = "0.6.4"
 Random = "1"
-SEQ2EXPdata = "1.1.0"
+SEQ2EXPdata = "1.1.1"
 Statistics = "1"
 StatsBase = "0.34.11"
 Zygote = "0.7.10"
