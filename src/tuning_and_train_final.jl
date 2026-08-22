@@ -12,7 +12,66 @@ function perform_hyperparameter_tuning(data, trc;
         patience=patience,
         loss_spec=trc.loss_spec,
         print_every=100);
+
+    # Every tuning trial returned `nothing`, so no model was ever built. Left
+    # alone this surfaces several stages downstream as
+    # `FieldError: type Nothing has no field seed` at `best_info.seed`, which
+    # says nothing about the cause.
+    #
+    # The dominant cause is a sequence shorter than the receptive field. Note it
+    # is the TRIMMED length that matters: `trim_common_ends` strips every
+    # position that is identical across the library, so a 93-residue protein
+    # whose assay mutates only 4 sites encodes to 6 positions and cannot host an
+    # 8-wide region. `create_model` returns `nothing` in that case and the
+    # tuning loop silently skips the trial.
+    isnothing(best_info) && _report_no_viable_architecture(data, trc, n_trials)
+
     return results, best_model, best_info
+end
+
+"""
+    _report_no_viable_architecture(data, trc, n_trials)
+
+Raise a diagnostic error when hyperparameter tuning produced no model at all.
+Always throws.
+"""
+function _report_no_viable_architecture(data, trc, n_trials)
+    L        = try data.X_dim[2] catch; nothing end
+    full_len = try length(first(data.raw_data.strings)) catch; nothing end
+    offset   = try data.prefix_offset catch; nothing end
+    bh       = VeryBasicCNN2.BOTTLENECK_HEIGHT
+
+    io = IOBuffer()
+    println(io, "Hyperparameter tuning produced no usable model in $n_trials trial(s).")
+    println(io)
+    if L !== nothing
+        println(io, "  encoded (trimmed) length : $L")
+        full_len === nothing || println(io, "  untrimmed length         : $full_len")
+        offset === nothing   || println(io, "  prefix trimmed away      : $offset")
+        println(io, "  default region width     : $bh   (bottleneck_height)")
+        println(io)
+        if L < bh
+            println(io, "The encoded length ($L) is smaller than the region width ($bh), so no")
+            println(io, "model can be built: a region cannot be wider than the sequence it reads.")
+            println(io)
+            println(io, "`trim_common_ends` removes every position that is identical across the")
+            println(io, "whole library, so what matters is the TRIMMED length, not the sequence")
+            println(io, "length. An assay that mutates only a handful of sites encodes to a very")
+            println(io, "short tensor even when the protein is long.")
+            println(io)
+            println(io, "Fix: pass a smaller region width, e.g.")
+            println(io, "    run_method(...; bottleneck_height=$(max(2, min(L, bh ÷ 2))))")
+            println(io, "or build the model creator with `bottleneck_height=` set below $L.")
+        else
+            println(io, "The encoded length clears the default region width, so the cause is")
+            println(io, "something else. Check the trial JSONs under:")
+            println(io, "    $(trc.save_path)/json/")
+            println(io, "and re-run with more trials to see whether any architecture is viable.")
+        end
+    else
+        println(io, "Could not inspect the dataset dimensions to diagnose further.")
+    end
+    error(String(take!(io)))
 end
 
 function train_and_evaluate_model(data, trc; 
