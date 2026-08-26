@@ -144,19 +144,30 @@ function resolve_normalization(raw_data; requested::Symbol=:auto, feature::Int=1
                                            skew_threshold=skew_threshold)
 
     if take_log
+        # The values on the page are NOT on the log scale. The log is a training
+        # transform only: BanzhafInference composes the scale-back function into
+        # the Banzhaf computation (`compute.jl`, `scale_back_function(
+        # final_nonlinearity(x))` applied to both coalition terms before they are
+        # differenced), and the pipeline maps predictions and labels back through
+        # the same function. So every number rendered is in the assay's own units.
         return (:log, nothing,
-                string("log, chosen automatically: ", why,
-                       ". Predictions and motif values are on the log scale."))
+                string("The labels were log transformed for training only, because ", why,
+                       ". Every number shown on this page has been mapped back to the ",
+                       "original scale, so influences are in the assay's own units."))
     end
     if wt !== nothing
         return (:zscore_wt, wt,
-                string("z-score centred on the wild type (", wt,
-                       "), chosen automatically: ", why, "."))
+                string("The labels were z-scored for training only, centred on the wild-type ",
+                       "value (", wt, "). ", uppercasefirst(why),
+                       ". Every number shown on this page is in the assay's own units."))
     end
     return (:zscore, nothing,
-            string("z-score centred on the label mean, chosen automatically: ", why,
-                   ". The wild-type value is not recoverable from this dataset, so the ",
-                   "origin is the library mean and not the wild type."))
+            string("The labels were z-scored for training only, centred on the label mean. ",
+                   uppercasefirst(why),
+                   ". Every number shown on this page is in the assay's own units. ",
+                   "This dataset does not record its wild-type value, so the origin is the ",
+                   "library mean rather than the wild type: read influence magnitudes as ",
+                   "relative to each other, not as absolute distances from the wild type."))
 end
 
 """
