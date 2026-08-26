@@ -1,5 +1,9 @@
 
 function obtain_trained_model_and_splited_datasets(data, trc)
+    # `:auto` must be turned into a real method before any normalization runs.
+    # RealLabelNormalization's `compute_normalization_stats` does not validate
+    # the symbol, so an unresolved `:auto` would silently take its `:log` branch.
+    resolve_normalization!(trc, data)
     # train the model using train + validation data
     m, train_stats, dl_train_eval, dl_test_eval, split_indices = 
             train_and_evaluate_model(data, trc; max_epochs=trc.max_training_epochs, patience=trc.patience,);

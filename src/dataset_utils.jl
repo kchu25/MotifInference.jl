@@ -101,7 +101,7 @@ function dataset(;
         file::String,
         seq_type::Symbol = :dna,
         type::Symbol = :conv,
-        normalization_method::Symbol = :zscore,
+        normalization_method::Symbol = :auto,
         wt_reference::Union{Nothing,Real,AbstractVector{<:Real}} = nothing,
         seed::Union{Int, Nothing} = nothing,
         motif_sizes::Vector{Int} = [2,3,4,5],

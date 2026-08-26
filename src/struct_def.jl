@@ -26,7 +26,25 @@ mutable struct training_and_rendering_config
     dpi::Int                             # resolution for rendering plots
     save_path::String                    # path to save the models and rendered output files; a folder
     title_string::String                 # title for the rendered output
+    normalization_note::String           # human-readable sentence describing how the labels were
+                                         # transformed, for the rendered page. Empty when the caller
+                                         # named the method explicitly (nothing was decided here).
+                                         # TRAILING FIELD: added after the other 22, so every
+                                         # pre-existing positional construction still works.
 end
+
+# Legacy 22-argument constructor: anything that built a config before
+# `normalization_note` existed keeps working, with an empty note.
+training_and_rendering_config(datapath, model_creator, seed, max_training_epochs,
+    max_processor_epochs, predict_position, patience, seq_type, type,
+    normalization_method, wt_reference, loss_spec, scale_back, top_and_bot_counts,
+    activation_thresh, motif_sizes, count_threshold, Q_threshold, dpi, save_path,
+    title_string) =
+    training_and_rendering_config(datapath, model_creator, seed, max_training_epochs,
+        max_processor_epochs, predict_position, patience, seq_type, type,
+        normalization_method, wt_reference, loss_spec, scale_back, top_and_bot_counts,
+        activation_thresh, motif_sizes, count_threshold, Q_threshold, dpi, save_path,
+        title_string, "")
 
 # Keep the struct as-is, add external constructor
 function training_and_rendering_config(
@@ -34,7 +52,8 @@ function training_and_rendering_config(
     seq_type=:dna,
     seed=nothing,
     type=:conv,
-    normalization_method=:zscore,    
+    normalization_method=:auto,   # :auto reads the dataset and picks; see label_transform.jl.
+                                  # Pass an explicit method to override and to get the old default.
     wt_reference=nothing,
     loss_spec=loss_specs[:mse],
     max_training_epochs=40,
@@ -53,6 +72,6 @@ function training_and_rendering_config(
         datapath, model_creator, seed, max_training_epochs, 
         max_processor_epochs, predict_position, patience, seq_type, type, 
         normalization_method, wt_reference, loss_spec, scale_back, top_and_bot_counts, activation_thresh, motif_sizes, count_threshold, Q_threshold, 
-        dpi, save_path, title_string
+        dpi, save_path, title_string, ""
     )
 end

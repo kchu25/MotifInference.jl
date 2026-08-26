@@ -64,7 +64,7 @@ Infers the dataset name from the filename and uses sensible defaults.
 function make_trc(datapath::String;
     seq_type::Symbol=:dna,
     type::Symbol=:conv,
-    normalization_method::Symbol=:zscore,
+    normalization_method::Symbol=:auto,
     wt_reference::Union{Nothing,Real,AbstractVector{<:Real}}=nothing,
     seed::Union{Int,Nothing}=nothing,
     motif_sizes::Vector{Int}=[2, 3, 4, 5],
@@ -224,10 +224,12 @@ function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_
             top_movers_csv_append=append_top_motifs,
             top_movers_label=feature_label,
             report_location_z=report_location_z,
+            transform_note=trc.normalization_note,  # "" unless :auto chose the method
             points_only=points_only,
             )
     else
         MotifInference.GlyphEctoplasm.plot_motifs_conv_case(data, m, trc.motif_sizes, contributions_df_filtered, dfs, pts_all, pts_test, all_indices; interaction_summaries=interaction_summaries_str,
+            transform_note=trc.normalization_note,  # "" unless :auto chose the method
             dpi=trc.dpi,
             save_path=save_path,
             page_title=trc.title_string,
@@ -300,6 +302,10 @@ function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patien
         isnothing(bottleneck_height)  || push!(bn_kw, :bottleneck_height  => bottleneck_height)
         trc.model_creator = (args...; kw...) -> base_creator(args...; bn_kw..., kw...)
     end
+
+    # Turn `:auto` into a concrete method before tuning, which already reads
+    # `trc.normalization_method`. Idempotent -- an explicit method is untouched.
+    resolve_normalization!(trc, data)
 
     tune_if_needed!(trc, data; tune_max_epochs, tune_n_trials, tune_patience)
 
@@ -465,7 +471,7 @@ function run_method(datapath::String;
     # make_trc kwargs
     seq_type::Symbol=:dna,
     type::Symbol=:conv,
-    normalization_method::Symbol=:zscore,
+    normalization_method::Symbol=:auto,
     wt_reference::Union{Nothing,Real,AbstractVector{<:Real}}=nothing,
     seed::Union{Int,Nothing}=nothing,
     motif_sizes::Vector{Int}=[2, 3, 4, 5],
@@ -523,7 +529,7 @@ function run_method(strings::Vector{String}, labels::Union{AbstractVector,Abstra
     # make_trc kwargs
     seq_type::Symbol=:dna,
     type::Symbol=:conv,
-    normalization_method::Symbol=:zscore,
+    normalization_method::Symbol=:auto,
     wt_reference::Union{Nothing,Real,AbstractVector{<:Real}}=nothing,
     seed::Union{Int,Nothing}=nothing,
     motif_sizes::Vector{Int}=[2, 3, 4, 5],
