@@ -113,6 +113,132 @@ function tune_if_needed!(trc, data; tune_max_epochs=15, tune_n_trials=2, tune_pa
 end
 
 """
+    _write_run_info(trc, rank, seed, n_runs)
+
+Stamp `run_info.json` into this run's own folder so a combiner can tell the runs
+apart from files alone -- which seed produced it, and where it ranked. Written
+by hand; MotifInference does not depend on a JSON package.
+"""
+function _write_run_info(trc, rank::Int, seed::Int, n_runs::Int)
+    dir = output_path(trc); mkpath(dir)
+    open(joinpath(dir, "run_info.json"), "w") do io
+        print(io, "{\"run\":", rank, ",\"seed\":", seed, ",\"n_runs\":", n_runs,
+                  ",\"subdir\":\"", trc.output_subdir, "\"}")
+    end
+end
+
+"""
+    tune_and_rank_seeds!(trc, data; n_runs=1, by=:best_r2, tune_max_epochs, tune_n_trials, tune_patience)
+        -> Vector{Int}
+
+The seeds to run, best first. Tuning happens at most once.
+
+`n_runs == 1` delegates to [`tune_if_needed!`](@ref) and returns `[trc.seed]`,
+so the single-run path is exactly what it was.
+
+For `n_runs > 1` the ranking comes from the tuning trials, which are already
+scored -- `tune_hyperparameters` returns one row per trial. Every one of those
+seeds also has a `json/trial_seed_<seed>.json` on disk, so training a runner-up
+later reloads that config instead of re-tuning. That is what makes multi-run
+cheap: N models, one tuning pass.
+
+When `trc.seed` is already set (a resumed run) there is no in-memory table, so
+the scores are read back from the newest `results_*.csv` the tuner wrote.
+
+`by` is `:best_r2` (ranked high to low) or `:val_loss` (low to high). Asking for
+more runs than there are usable trials is an error naming `tune_n_trials`
+rather than a silent short run.
+"""
+function tune_and_rank_seeds!(trc, data; n_runs::Int=1, by::Symbol=:best_r2,
+                              tune_max_epochs=15, tune_n_trials=2, tune_patience=10)
+    n_runs >= 1 || throw(ArgumentError("n_runs must be >= 1, got $n_runs"))
+    if n_runs == 1
+        tune_if_needed!(trc, data; tune_max_epochs, tune_n_trials, tune_patience)
+        return Int[trc.seed]
+    end
+
+    results = nothing
+    if isnothing(trc.seed)
+        results, _, best_info = MotifInference.perform_hyperparameter_tuning(data, trc;
+            trial_number_start=1, max_epochs=tune_max_epochs,
+            n_trials=tune_n_trials, patience=tune_patience)
+        trc.seed = best_info.seed
+        @info "Tuning complete. Best seed: $(trc.seed)"
+    else
+        results = _load_tuning_results(trc.save_path)
+        results === nothing && error("""
+            n_runs=$n_runs needs the tuning scores, but `trc.seed` is already set
+            ($(trc.seed)) so tuning was skipped, and no results_*.csv was found in
+            $(trc.save_path).
+            Either clear the seed (seed=nothing) to tune, or run with n_runs=1.""")
+    end
+    return _rank_seeds(results, n_runs; by=by, tune_n_trials=tune_n_trials)
+end
+
+"""
+    _rank_seeds(results, n; by=:best_r2, tune_n_trials=nothing) -> Vector{Int}
+
+Top `n` seeds from a table carrying `seed` and `by` columns. Accepts anything
+with those properties, so it works on the tuner's DataFrame and on the
+NamedTuple `_load_tuning_results` returns.
+"""
+function _rank_seeds(results, n::Int; by::Symbol=:best_r2, tune_n_trials=nothing)
+    by in (:best_r2, :val_loss) ||
+        throw(ArgumentError("seed_rank_by must be :best_r2 or :val_loss, got :$by"))
+    seeds = Int.(collect(getproperty(results, :seed)))
+    score = Float64.(collect(getproperty(results, by)))
+    keep  = findall(i -> isfinite(score[i]), eachindex(score))
+    length(keep) >= n || error("""
+        Asked for n_runs=$n but only $(length(keep)) usable tuning trial(s) exist\
+        $(tune_n_trials === nothing ? "" : " (tune_n_trials=$tune_n_trials)").
+        Raise tune_n_trials to at least $n and rerun, or lower n_runs.""")
+    # :best_r2 is better high, :val_loss better low
+    ord = keep[sortperm(score[keep]; rev = (by === :best_r2))]
+    return seeds[ord[1:n]]
+end
+
+"""
+    _load_tuning_results(save_path) -> NamedTuple or nothing
+
+Read the newest `results_*.csv` the tuner wrote, as
+`(; seed, best_r2, val_loss)`. Hand-parsed on purpose: MotifInference does not
+depend on CSV or DataFrames, and the file is four numeric columns.
+Returns `nothing` when there is no readable file.
+"""
+function _load_tuning_results(save_path::AbstractString)
+    isdir(save_path) || return nothing
+    files = filter(f -> startswith(basename(f), "results_") && endswith(f, ".csv"),
+                   readdir(save_path, join=true))
+    isempty(files) && return nothing
+    sort!(files, by=mtime)
+    seed = Int[]; r2 = Float64[]; vl = Float64[]
+    for f in reverse(files)                     # newest first; take the first that parses
+        try
+            lines = filter(!isempty, strip.(readlines(f)))
+            length(lines) < 2 && continue
+            hdr = Symbol.(strip.(split(lines[1], ',')))
+            si  = findfirst(==(:seed), hdr)
+            ri  = findfirst(==(:best_r2), hdr)
+            vi  = findfirst(==(:val_loss), hdr)
+            (si === nothing || ri === nothing) && continue
+            empty!(seed); empty!(r2); empty!(vl)
+            for l in lines[2:end]
+                p = strip.(split(l, ','))
+                length(p) < max(si, ri) && continue
+                s = tryparse(Int, p[si]); v = tryparse(Float64, p[ri])
+                (s === nothing || v === nothing) && continue
+                push!(seed, s); push!(r2, v)
+                push!(vl, vi === nothing ? NaN : something(tryparse(Float64, p[vi]), NaN))
+            end
+            isempty(seed) || return (; seed, best_r2=r2, val_loss=vl)
+        catch
+            continue
+        end
+    end
+    return nothing
+end
+
+"""
     sanitize_path_component(s)
 
 Turn an arbitrary feature/label name into a single filesystem- and URL-safe path
@@ -205,8 +331,8 @@ Use it to backfill that file into an existing result folder without paying for
 a full re-render.
 """
 function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, feature_label=nothing, append_top_motifs=false, points_only=false, report_location_z=false)
-    save_path = joinpath(trc.save_path, render_folder_name)
-    top_movers_csv = joinpath(trc.save_path, "top_motifs.csv")
+    save_path = joinpath(output_path(trc), render_folder_name)
+    top_movers_csv = joinpath(output_path(trc), "top_motifs.csv")
 
     if trc.type == :mut
         MotifInference.GlyphEctoplasm.plot_motifs_mut_case(data, m, contributions_df_filtered, dfs;
@@ -265,12 +391,13 @@ effect once a seed is set.
   to a forward pass plus one CSV write. Pass `trc.seed` explicitly so the run
   reuses the cached model instead of re-tuning.
 """
-function run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing, bottleneck_filters=nothing, bottleneck_height=nothing, points_only=false, report_location_z=false)
+function run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing, bottleneck_filters=nothing, bottleneck_height=nothing, points_only=false, report_location_z=false, n_runs::Int=1, seed_rank_by::Symbol=:best_r2)
     data = load_data(trc)
     run_method(trc, data; tune_max_epochs, tune_n_trials, tune_patience,
         output_indices, sensitivity_analysis, dataset_name, protein_name,
         non_overlapping_sparsify, sparse_unpool_size, sparse_unpool_alpha,
-        bottleneck_filters, bottleneck_height, points_only, report_location_z)
+        bottleneck_filters, bottleneck_height, points_only, report_location_z,
+        n_runs, seed_rank_by)
 end
 
 """
@@ -280,7 +407,7 @@ Run the pipeline with an already-loaded `data` (a `OnehotSEQ2EXP_Dataset`),
 bypassing `load_data`. Used by the in-memory `run_method(strings, labels; ...)`
 entry point so no .jld2 file is required.
 """
-function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing, bottleneck_filters=nothing, bottleneck_height=nothing, points_only=false, report_location_z=false)
+function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing, bottleneck_filters=nothing, bottleneck_height=nothing, points_only=false, report_location_z=false, n_runs::Int=1, seed_rank_by::Symbol=:best_r2)
     # Optional: make the inference-code layer's receptive fields non-overlapping.
     # Wrap the model creator so every model built for this run (tuning + final)
     # enables the sparse max-unpool op. Off by default.
@@ -307,8 +434,38 @@ function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patien
     # `trc.normalization_method`. Idempotent -- an explicit method is untouched.
     resolve_normalization!(trc, data)
 
-    tune_if_needed!(trc, data; tune_max_epochs, tune_n_trials, tune_patience)
+    seeds = tune_and_rank_seeds!(trc, data; n_runs=n_runs, by=seed_rank_by,
+                                 tune_max_epochs, tune_n_trials, tune_patience)
 
+    # `_run_one!` trims `trc.motif_sizes` in place, and sets the output folder.
+    # Both are restored so a second run starts from the same configuration the
+    # first did -- otherwise run 2 would inherit run 1's trimmed motif sizes.
+    base_sizes, base_subdir = copy(trc.motif_sizes), trc.output_subdir
+    for (i, sd) in enumerate(seeds)
+        trc.seed         = sd
+        trc.motif_sizes  = copy(base_sizes)
+        # n_runs == 1 keeps `output_subdir` exactly as the caller left it (""
+        # by default), so the single-run layout is unchanged.
+        trc.output_subdir = n_runs == 1 ? base_subdir : joinpath(base_subdir, "run_$(i)")
+        n_runs > 1 && @info "run $(i)/$(n_runs)" seed=sd out=output_path(trc)
+        n_runs > 1 && _write_run_info(trc, i, sd, n_runs)
+        _run_one!(data, trc; output_indices, sensitivity_analysis, dataset_name,
+                  protein_name, points_only, report_location_z)
+    end
+    trc.motif_sizes, trc.output_subdir = base_sizes, base_subdir
+    return nothing
+end
+
+"""
+    _run_one!(data, trc; ...)
+
+Train (or reload) the model for `trc.seed` and render every output index into
+`output_path(trc)`. Extracted verbatim from the `run_method` body so it can be
+called once per seed; behaviour for a single seed is unchanged.
+"""
+function _run_one!(data, trc; output_indices=nothing, sensitivity_analysis=false,
+                   dataset_name=nothing, protein_name=nothing, points_only=false,
+                   report_location_z=false)
     m, train_stats, dl_train_eval, dl_test_eval, split_indices =
         MotifInference.obtain_trained_model_and_splited_datasets(data, trc)
 

@@ -31,7 +31,8 @@ function obtain_motifs(data, m, processor, train_stats, trc; predict_position=1)
             scale_back=trc.scale_back,
             activation_thresh=trc.activation_thresh, 
             predict_position=predict_position,
-            cache_folder_parent = trc.save_path, 
+            cache_folder_parent = output_path(trc),   # run-specific: the arrow caches
+                                                      # depend on `m` and `processor`
             normalization_method=trc.normalization_method);
 
     # Step 2: sample random coalitions (background) for significance testing
@@ -80,7 +81,7 @@ end
 Obtain or load raw motifs to avoid recomputation. Caches results in JLD2 format.
 """
 function load_or_save_raw_motifs(data, m, processor, train_stats, trc; output_index=1)
-    cache_file = joinpath(trc.save_path, "motifs_cache_output_$(output_index).jld2")
+    cache_file = joinpath(output_path(trc), "motifs_cache_output_$(output_index).jld2")
     
     if isfile(cache_file)
         println("Loading cached motifs from: $cache_file")

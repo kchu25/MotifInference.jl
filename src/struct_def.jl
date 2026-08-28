@@ -31,7 +31,35 @@ mutable struct training_and_rendering_config
                                          # named the method explicitly (nothing was decided here).
                                          # TRAILING FIELD: added after the other 22, so every
                                          # pre-existing positional construction still works.
+    output_subdir::String                # sub-folder of `save_path` for the RUN-SPECIFIC outputs:
+                                         # the motif caches, the rendering folders and top_motifs.csv.
+                                         # "" (the default) means write them straight into
+                                         # `save_path`, which is byte-for-byte the old layout.
+                                         # Multi-run sets it to "run_1", "run_2", ... so several
+                                         # seeds can share one `models/`, `json/` and results CSV.
+                                         # See `output_path`. TRAILING FIELD, same reason as above.
 end
+
+"""
+    output_path(trc) -> String
+
+Where this run's own outputs go: `save_path/output_subdir`, or just `save_path`
+when `output_subdir` is empty (`joinpath(p, "") == p`).
+
+The split exists because the model artifacts are already seed-keyed
+(`models/model_<seed>.jld2`, `models/processor_<seed>_pp_<i>.jld2`) and the
+tuning artifacts (`json/trial_seed_*.json`, `results_*.csv`) are shared, so
+several runs can live under one `save_path` while only these four collide:
+
+  * `motifs_cache_output_<i>.jld2`
+  * `cache/motifs_size_*.arrow`   (model-dependent — they take `m` and `processor`)
+  * `renderings_<feature>/`
+  * `top_motifs.csv`
+
+Those four, and only those four, are addressed through this function.
+"""
+output_path(trc) = isempty(trc.output_subdir) ? trc.save_path :
+                   joinpath(trc.save_path, trc.output_subdir)
 
 # Legacy 22-argument constructor: anything that built a config before
 # `normalization_note` existed keeps working, with an empty note.
@@ -44,7 +72,21 @@ training_and_rendering_config(datapath, model_creator, seed, max_training_epochs
         max_processor_epochs, predict_position, patience, seq_type, type,
         normalization_method, wt_reference, loss_spec, scale_back, top_and_bot_counts,
         activation_thresh, motif_sizes, count_threshold, Q_threshold, dpi, save_path,
-        title_string, "")
+        title_string, "", "")
+
+# Legacy 22-argument constructor: anything that built a config after
+# `normalization_note` but before `output_subdir` keeps working, writing its
+# outputs straight into `save_path`.
+training_and_rendering_config(datapath, model_creator, seed, max_training_epochs,
+    max_processor_epochs, predict_position, patience, seq_type, type,
+    normalization_method, wt_reference, loss_spec, scale_back, top_and_bot_counts,
+    activation_thresh, motif_sizes, count_threshold, Q_threshold, dpi, save_path,
+    title_string, normalization_note) =
+    training_and_rendering_config(datapath, model_creator, seed, max_training_epochs,
+        max_processor_epochs, predict_position, patience, seq_type, type,
+        normalization_method, wt_reference, loss_spec, scale_back, top_and_bot_counts,
+        activation_thresh, motif_sizes, count_threshold, Q_threshold, dpi, save_path,
+        title_string, normalization_note, "")
 
 # Keep the struct as-is, add external constructor
 function training_and_rendering_config(
@@ -67,11 +109,12 @@ function training_and_rendering_config(
     # top_and_bot_counts=500, # temporary for now
     count_threshold=25,
     Q_threshold=1e-25,
-    dpi=60)
+    dpi=60,
+    output_subdir="")   # "" => the old single-run layout; multi-run sets "run_i"
     return training_and_rendering_config(        
         datapath, model_creator, seed, max_training_epochs, 
         max_processor_epochs, predict_position, patience, seq_type, type, 
         normalization_method, wt_reference, loss_spec, scale_back, top_and_bot_counts, activation_thresh, motif_sizes, count_threshold, Q_threshold, 
-        dpi, save_path, title_string, ""
+        dpi, save_path, title_string, "", output_subdir
     )
 end
