@@ -128,6 +128,54 @@ function _write_run_info(trc, rank::Int, seed::Int, n_runs::Int)
 end
 
 """
+    tuning_budget(n_variants; type=:mut) -> (tune_n_trials, n_runs)
+
+How many tuning trials and how many runs a dataset of this size can afford.
+
+Cost rises roughly in proportion to the number of variants times the sequence
+length, so a flat setting is wrong at both ends of a corpus: measured on the
+ProteinGym pass, the smallest datasets take about 7 minutes each while the six
+largest take about 2.7 hours. Tuning is nearly free on the small ones and is the
+first thing to cut on the large ones.
+
+| variants | trials | runs |
+|---|---|---|
+| < 20 000 | 20 | 5 |
+| < 50 000 | 10 | 5 |
+| otherwise | 5 | 3 |
+
+Runs are protected before trials, because the run count is the parameter with
+evidence behind it: in simulation every finding that all five runs agreed on was
+correct. Trials only widen the seed pool the runs are chosen from.
+
+A tuning trial runs `tune_max_epochs` epochs against `max_training_epochs` for a
+final model, so at the defaults (20 against 40) a trial costs about half a run.
+Twenty trials plus five runs is therefore roughly fifteen model-equivalents,
+against the two and a half of a single untuned pass.
+
+!!! note "Mutagenesis only"
+    The tiers are calibrated on `type = :mut` timings. The convolution path has a
+    different cost profile — it computes multi-motifs over every filter pair
+    rather than over mutated regions — so `type = :conv` is rejected rather than
+    silently given mutagenesis numbers. Extending it means timing a conv pass and
+    adding a branch here; nothing else in the multi-run machinery is
+    mutagenesis-specific.
+
+Sequence length is deliberately not a parameter. It does affect cost, but the
+available timings confound it with variant count, so the tiers use the variable
+that was cleanly measured. Recalibrate from your own per-dataset timings when you
+have them.
+"""
+function tuning_budget(n_variants::Integer; type::Symbol=:mut)
+    type === :mut || throw(ArgumentError(
+        "tuning_budget is calibrated for type=:mut only; got :$type. " *
+        "See the docstring: the conv path needs its own timings."))
+    n_variants < 20_000 ? (20, 5) :
+    n_variants < 50_000 ? (10, 5) :
+                          ( 5, 3)
+end
+
+"""
     tune_and_rank_seeds!(trc, data; n_runs=1, by=:best_r2, tune_max_epochs, tune_n_trials, tune_patience)
         -> Vector{Int}
 
