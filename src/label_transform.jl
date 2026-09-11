@@ -186,6 +186,32 @@ function _labels_for_feature(raw_data, feature::Int)
 end
 
 """
+    log_view_eligible(raw_data; feature=1, skew_threshold=1.0) -> Bool
+
+Whether the rendered page should offer a log-scale view of the indicator plot.
+
+This is a DISPLAY question, and it is deliberately looser than
+`detect_label_transform`, which answers the training question. Two differences:
+
+  * Positivity is not required. The plot shifts before it logs, and a shift is
+    monotone, so the ordering the indicator plot is read for survives it. The
+    training path cannot do that -- a shifted log feeds the fit and was measured
+    to invent a mode -- but a shifted axis only restates the same points.
+  * Nothing else is consulted. Skew is the whole question: a right-skewed assay
+    piles every point into one corner of a linear plot and the reader learns
+    nothing from it.
+
+What is still excluded is an assay already in log units, because a log of a log
+is meaningless whatever the skew. On this corpus that is exactly the RNAGym
+log-enrichment sets and the `kcal/mol` stability block.
+"""
+function log_view_eligible(raw_data; feature::Int=1, skew_threshold::Real=1.0)
+    already_log_scale(raw_data.feature_names; feature=feature) && return false
+    y = _labels_for_feature(raw_data, feature)
+    return label_skew(y) > skew_threshold
+end
+
+"""
     resolve_normalization!(trc, data; feature=1, skew_threshold=1.0) -> trc
 
 Replace `trc.normalization_method == :auto` with a concrete method, chosen from

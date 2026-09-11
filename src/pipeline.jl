@@ -378,7 +378,7 @@ cloud behind the indicator (yy-KDE) plots — and skips every figure and page.
 Use it to backfill that file into an existing result folder without paying for
 a full re-render.
 """
-function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, feature_label=nothing, append_top_motifs=false, points_only=false, report_location_z=false)
+function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, feature_label=nothing, append_top_motifs=false, points_only=false, report_location_z=false, output_index::Int=1)
     save_path = joinpath(output_path(trc), render_folder_name)
     top_movers_csv = joinpath(output_path(trc), "top_motifs.csv")
 
@@ -399,6 +399,11 @@ function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_
             top_movers_label=feature_label,
             report_location_z=report_location_z,
             transform_note=trc.normalization_note,  # "" unless :auto chose the method
+            # Right-skewed assays get a second, log-scale indicator PNG per motif
+            # and a toggle in the popup. Decided from the data here rather than in
+            # GlyphEctoplasm, which cannot see this function: the dependency runs
+            # MotifInference -> GlyphEctoplasm and reversing it would be a cycle.
+            log_view=MotifInference.log_view_eligible(data.raw_data; feature=output_index),
             points_only=points_only,
             )
     else
@@ -562,7 +567,7 @@ function _run_one!(data, trc; output_indices=nothing, sensitivity_analysis=false
         feature_label = isnothing(data.raw_data.feature_names) ? nothing :
                         data.raw_data.feature_names[output_index]
 
-        render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis, dataset_name, protein_name, feature_label, append_top_motifs=(loop_pos > 1), points_only, report_location_z)
+        render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis, dataset_name, protein_name, feature_label, append_top_motifs=(loop_pos > 1), points_only, report_location_z, output_index)
 
         @info "Output $output_index done → $(render_folder_name)"
     end
