@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "motifinference-results",
+      "runtimeExecutable": "/home/shane/Desktop/academia/code/dev/MotifInference_python/.venv/bin/python",
+      "runtimeArgs": ["-m", "http.server", "8765", "--bind", "127.0.0.1", "--directory", "/home/shane/Desktop/academia/code/dev/MotifInference_python/results"],
+      "port": 8765
+    },
+    {
+      "name": "run-multi-summary",
+      "runtimeExecutable": "/home/shane/Desktop/academia/code/dev/MotifInference_python/.venv/bin/python",
+      "runtimeArgs": ["-m", "http.server", "8766", "--bind", "127.0.0.1", "--directory", "/home/shane/Desktop/CUR_MUT/run_thru/run_multi_html_result"],
+      "port": 8766
+    }
+  ]
+}

@@ -87,6 +87,7 @@ Which outputs get processed and how the HTML report is labeled.
 | `output_indices`      | `nothing` | Which output columns to process. `nothing` → all outputs (when the model predicts all positions), otherwise the first. Pass e.g. `1:5` or `[2]`. |
 | `sensitivity_analysis`| `false`   | Run sensitivity analysis in the conv-case rendering. |
 | `dataset_name`        | `nothing` | Name shown in the rendered report. |
+| `show_outside_mutations` | `true` | Mutagenesis runs (`type=:mut`) only. Also draw, per motif, the mutations its sequences carry **outside** the motif's filter windows: every outside site where more than 2% of the motif's sequences are mutated becomes an extra logo column (wild type grey, mutants orange) in `<f>_ow.png` / `<f>_altview_ow.png`, and the pages get a Show/Hide switch. `false` gives the output from before the option existed. |
 
 ---
 

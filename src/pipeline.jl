@@ -377,8 +377,19 @@ a mixed setting puts the header and the later rows out of step.
 cloud behind the indicator (yy-KDE) plots — and skips every figure and page.
 Use it to backfill that file into an existing result folder without paying for
 a full re-render.
+
+`show_outside_mutations=true` (the default; mutagenesis only) also draws, for
+each motif, the mutations its sequences carry OUTSIDE the motif's filter windows:
+every site outside the windows where more than 2% of the motif's sequences are
+mutated (the same rule that keeps a column in the reduced logo) becomes an extra
+logo column, wild type in grey and mutants in orange. They go into two extra
+PNGs per motif, `<f>_ow.png` and `<f>_altview_ow.png`, and `index.html` /
+`index1.html` gain a Show/Hide switch that swaps every logo for its `_ow` twin.
+Use it to check whether a top motif's label shift could come from mutations the
+filters never look at. `false` gives exactly the output from before the option
+existed. Ignored for `type = :conv`.
 """
-function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, feature_label=nothing, append_top_motifs=false, points_only=false, report_location_z=false, output_index::Int=1)
+function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, feature_label=nothing, append_top_motifs=false, points_only=false, report_location_z=false, output_index::Int=1, show_outside_mutations::Bool=true)
     save_path = joinpath(output_path(trc), render_folder_name)
     top_movers_csv = joinpath(output_path(trc), "top_motifs.csv")
 
@@ -404,6 +415,8 @@ function render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_
             # GlyphEctoplasm, which cannot see this function: the dependency runs
             # MotifInference -> GlyphEctoplasm and reversing it would be a cycle.
             log_view=MotifInference.log_view_eligible(data.raw_data; feature=output_index),
+            # Outside-window mutations: `_ow` logo twins plus the page switch.
+            show_outside_mutations=show_outside_mutations,
             points_only=points_only,
             )
     else
@@ -443,14 +456,19 @@ effect once a seed is set.
   with the cached model, processor and motifs `.jld2` in place, the run reduces
   to a forward pass plus one CSV write. Pass `trc.seed` explicitly so the run
   reuses the cached model instead of re-tuning.
+- `show_outside_mutations=true`: mutagenesis runs (`type = :mut`) also draw each
+  motif's mutations outside its filter windows (sites where more than 2% of the
+  motif's sequences are mutated) as grey/orange logo columns in `<f>_ow.png` /
+  `<f>_altview_ow.png`, with a Show/Hide switch on the pages. `false` gives the
+  output from before the option existed. See [`render_html`](@ref).
 """
-function run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing, bottleneck_filters=nothing, bottleneck_height=nothing, points_only=false, report_location_z=false, n_runs::Int=1, seed_rank_by::Symbol=:best_r2)
+function run_method(trc; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing, bottleneck_filters=nothing, bottleneck_height=nothing, points_only=false, report_location_z=false, n_runs::Int=1, seed_rank_by::Symbol=:best_r2, show_outside_mutations::Bool=true)
     data = load_data(trc)
     run_method(trc, data; tune_max_epochs, tune_n_trials, tune_patience,
         output_indices, sensitivity_analysis, dataset_name, protein_name,
         non_overlapping_sparsify, sparse_unpool_size, sparse_unpool_alpha,
         bottleneck_filters, bottleneck_height, points_only, report_location_z,
-        n_runs, seed_rank_by)
+        n_runs, seed_rank_by, show_outside_mutations)
 end
 
 """
@@ -458,9 +476,10 @@ end
 
 Run the pipeline with an already-loaded `data` (a `OnehotSEQ2EXP_Dataset`),
 bypassing `load_data`. Used by the in-memory `run_method(strings, labels; ...)`
-entry point so no .jld2 file is required.
+entry point so no .jld2 file is required. Takes the same keyword arguments as
+`run_method(trc; ...)`, including `show_outside_mutations=true`.
 """
-function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing, bottleneck_filters=nothing, bottleneck_height=nothing, points_only=false, report_location_z=false, n_runs::Int=1, seed_rank_by::Symbol=:best_r2)
+function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patience=5, output_indices=nothing, sensitivity_analysis=false, dataset_name=nothing, protein_name=nothing, non_overlapping_sparsify=false, sparse_unpool_size=nothing, sparse_unpool_alpha=nothing, bottleneck_filters=nothing, bottleneck_height=nothing, points_only=false, report_location_z=false, n_runs::Int=1, seed_rank_by::Symbol=:best_r2, show_outside_mutations::Bool=true)
     # Optional: make the inference-code layer's receptive fields non-overlapping.
     # Wrap the model creator so every model built for this run (tuning + final)
     # enables the sparse max-unpool op. Off by default.
@@ -503,7 +522,7 @@ function run_method(trc, data; tune_max_epochs=25, tune_n_trials=25, tune_patien
         n_runs > 1 && @info "run $(i)/$(n_runs)" seed=sd out=output_path(trc)
         n_runs > 1 && _write_run_info(trc, i, sd, n_runs)
         _run_one!(data, trc; output_indices, sensitivity_analysis, dataset_name,
-                  protein_name, points_only, report_location_z)
+                  protein_name, points_only, report_location_z, show_outside_mutations)
     end
     trc.motif_sizes, trc.output_subdir = base_sizes, base_subdir
     return nothing
@@ -518,7 +537,7 @@ called once per seed; behaviour for a single seed is unchanged.
 """
 function _run_one!(data, trc; output_indices=nothing, sensitivity_analysis=false,
                    dataset_name=nothing, protein_name=nothing, points_only=false,
-                   report_location_z=false)
+                   report_location_z=false, show_outside_mutations::Bool=true)
     m, train_stats, dl_train_eval, dl_test_eval, split_indices =
         MotifInference.obtain_trained_model_and_splited_datasets(data, trc)
 
@@ -567,7 +586,7 @@ function _run_one!(data, trc; output_indices=nothing, sensitivity_analysis=false
         feature_label = isnothing(data.raw_data.feature_names) ? nothing :
                         data.raw_data.feature_names[output_index]
 
-        render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis, dataset_name, protein_name, feature_label, append_top_motifs=(loop_pos > 1), points_only, report_location_z, output_index)
+        render_html(data, m, trc, contributions_df_filtered, dfs, pts_all, pts_test, all_indices, interaction_summaries_str, render_folder_name; sensitivity_analysis, dataset_name, protein_name, feature_label, append_top_motifs=(loop_pos > 1), points_only, report_location_z, output_index, show_outside_mutations)
 
         @info "Output $output_index done → $(render_folder_name)"
     end

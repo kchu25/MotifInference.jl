@@ -16,6 +16,9 @@ using Test
     # CPU-only forward-pass shape & round-trip tests (no training, no GPU).
     include("forward_shapes_tests.jl")
 
+    # CPU-only: rendering options reach every entry point (no training, no GPU).
+    include("render_options_tests.jl")
+
     # The integration tests require a real .jld2 dataset on disk and a GPU.
     # Point MOTIFINFERENCE_TEST_DATA at a dataset to run them:
     #     MOTIFINFERENCE_TEST_DATA=/path/to/data.jld2 julia --project -e 'using Pkg; Pkg.test()'
